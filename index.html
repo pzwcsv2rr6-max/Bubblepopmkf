@@ -286,10 +286,14 @@
     <script>
         let score = 0;
         let coins = 0;
+        
+        // --- CHARGEMENT DU STORAGE SAUVEGARDÉ ---
         let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
+        let currentSkin = localStorage.getItem('currentSkin') || 'classic';
+        let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
+        
         let lives = 3;
         let isPlaying = false;
-        let currentSkin = 'classic';
         let gameTimeout = null;
         let lastPopTime = 0;
 
@@ -297,7 +301,6 @@
         let baseSpeed = 4.5;       
         let speedMultiplier = 1.0; 
 
-        let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
         const skinPrices = { neon: 50, star: 150, donut: 300, diamond: 500, fire: 1000 };
 
         document.getElementById('start-btn').addEventListener('click', startGame);
@@ -363,8 +366,6 @@
                 
                 score += 10;
                 
-                // NOUVELLE ÉCONOMIE : Gains divisés par 4 pour plus de challenge
-                // Débute à 1 pièce par bulle et augmente très lentement avec la vitesse
                 coins += Math.max(1, Math.round(0.25 * speedMultiplier)); 
 
                 speedMultiplier += 0.04; 
@@ -400,6 +401,7 @@
             if (gameTimeout) clearTimeout(gameTimeout);
             document.querySelectorAll('.bubble').forEach(b => b.remove());
 
+            // SAUVEGARDE DES PIÈCES À LA FIN DE LA PARTIE
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
 
@@ -437,14 +439,20 @@
                 
                 if (unlockedSkins.includes(id)) {
                     currentSkin = id;
+                    // SAUVEGARDE DU SKIN ÉQUIPÉ
+                    localStorage.setItem('currentSkin', currentSkin);
                 } else {
                     let price = skinPrices[id];
                     if (totalCoins >= price) {
                         totalCoins -= price;
-                        localStorage.setItem('totalCoins', totalCoins);
                         unlockedSkins.push(id);
-                        localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
                         currentSkin = id;
+                        
+                        // SAUVEGARDE DES ACHATS ET DU NOUVEAU SKIN
+                        localStorage.setItem('totalCoins', totalCoins);
+                        localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+                        localStorage.setItem('currentSkin', currentSkin);
+                        
                         document.getElementById('bank-count').innerText = totalCoins;
                     } else {
                         alert("Pas assez de pièces !");
@@ -472,6 +480,7 @@
             });
         }
 
+        // Initialisation de la boutique avec les données sauvegardées dès le lancement
         updateSkinsUI();
     </script>
 </body>
