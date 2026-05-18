@@ -111,7 +111,7 @@
             box-shadow: 0 0 25px #ff3300, 0 0 10px #ffea00, inset -4px -4px 10px rgba(0,0,0,0.5);
         }
 
-        /* --- STYLES DES BULLES SPECIALES --- */
+        /* --- BULLE SPECIALE ARC-EN-CIEL --- */
         .bubble-rainbow {
             background: linear-gradient(45deg, #ff0055, #00ffcc, #ffcc00, #ff00ff);
             background-size: 300% 300%;
@@ -120,26 +120,6 @@
             box-shadow: 0 0 20px #fff, inset 0 0 10px rgba(255,255,255,0.5);
         }
         @keyframes rainbowGlow { 0% {background-position:0% 50%} 100% {background-position:100% 50%} }
-        
-        .bubble-freeze {
-            background: radial-gradient(circle at 30% 30%, #e0f2fe 0%, #38bdf8 70%);
-            border: 2px solid #bae6fd;
-            box-shadow: 0 0 20px #38bdf8, inset 0 0 8px #fff;
-        }
-        .bubble-freeze::after {
-            content: "❄️"; position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size: 20px;
-        }
-
-        .bubble-bomb {
-            background: radial-gradient(circle at center, #222 0%, #000 80%);
-            border: 3px solid #ff3333;
-            box-shadow: 0 0 15px #ff3333;
-            animation: pulseBomb 0.5s ease infinite alternate;
-        }
-        .bubble-bomb::after {
-            content: "💥"; position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size: 20px;
-        }
-        @keyframes pulseBomb { 0% { transform: scale(1); } 100% { transform: scale(1.08); box-shadow: 0 0 25px #ff3333; } }
 
         /* Particules d'explosion */
         .particle {
@@ -238,20 +218,11 @@
         .skin-name { font-size: 13px; font-weight: 600; color: #e0e0e6; }
         .price-tag { font-size: 12px; color: #ffd700; font-weight: 700; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; width: 100%; }
         .skin-option.active .price-tag { color: #00ffcc; }
-        
-        /* Effet visuel gelé sur tout l'écran */
-        #freeze-overlay {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: rgba(56, 189, 248, 0.15);
-            box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.5);
-            pointer-events: none; z-index: 2; opacity: 0; transition: opacity 0.3s ease;
-        }
     </style>
 </head>
 <body>
 
     <div id="game-container" onclick="triggerMiss()">
-        <div id="freeze-overlay"></div>
         
         <div id="hud" onclick="event.stopPropagation()">
             <div id="score-display" class="hud-item">Score: 0</div>
@@ -314,15 +285,11 @@
         let currentSkin = localStorage.getItem('currentSkin') || 'classic';
         let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
         
-        // États des upgrades achetés pour LA PROCHAINE partie
         let hasShieldBought = false;
         let hasMagnetBought = false;
         
-        // États actifs PENDANT la partie en cours
         let shieldActive = false;
         let magnetActive = false;
-        let isFrozen = false;
-        let freezeTimeout = null;
 
         let lives = 3;
         let isPlaying = false;
@@ -341,13 +308,12 @@
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
         
-        // Initialisation de l'affichage du HighScore au chargement
         document.getElementById('menu-highscore').innerText = "Meilleur Score: " + highScore;
 
         function triggerMiss() {
             if (!isPlaying) return;
             if (Date.now() - lastPopTime < 100) return; 
-            combo = 0; // Le combo se brise si on tape à côté
+            combo = 0; 
             updateHUD();
             loseLife();
         }
@@ -361,14 +327,10 @@
             combo = 0;
             speedMultiplier = 1.0;
             isPlaying = true;
-            isFrozen = false;
-            document.getElementById('freeze-overlay').style.opacity = 0;
             
-            // Application des Upgrades achetés
             shieldActive = hasShieldBought;
             magnetActive = hasMagnetBought;
             
-            // Reset des boutons d'upgrades pour la boutique
             hasShieldBought = false;
             hasMagnetBought = false;
 
@@ -376,7 +338,6 @@
             
             document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
             if (gameTimeout) clearTimeout(gameTimeout);
-            if (freezeTimeout) clearTimeout(freezeTimeout);
             
             updateHUD();
             gameLoop();
@@ -387,9 +348,7 @@
             
             createBubble();
             
-            // Si l'effet Gelé est actif, on divise le rythme d'apparition par 1.8
-            let modifier = isFrozen ? 1.8 : 1.0;
-            let currentSpawnDelay = Math.max(380, (baseSpawnDelay / Math.sqrt(speedMultiplier)) * modifier);
+            let currentSpawnDelay = Math.max(380, baseSpawnDelay / Math.sqrt(speedMultiplier));
             gameTimeout = setTimeout(gameLoop, currentSpawnDelay);
         }
 
@@ -401,18 +360,10 @@
 
             const bubble = document.createElement('div');
             
-            // --- TIRAGE AU SORT DU TYPE DE BULLE (RARETÉ) ---
-            let rand = Math.random() * 100;
-            let bubbleType = "normal"; // 85% de chance
-            
-            if (rand < 3) {
-                bubbleType = "bomb";     // 3% chance
-                bubble.className = "bubble bubble-bomb";
-            } else if (rand < 9) {
-                bubbleType = "freeze";   // 6% chance
-                bubble.className = "bubble bubble-freeze";
-            } else if (rand < 15) {
-                bubbleType = "rainbow";  // 6% chance
+            // --- EXACTEMENT 5% DE CHANCE D'AVOIR UNE BULLE ARC-EN-CIEL ---
+            let bubbleType = "normal";
+            if (Math.random() < 0.05) {
+                bubbleType = "rainbow";
                 bubble.className = "bubble bubble-rainbow";
             } else {
                 bubble.className = `bubble skin-${currentSkin}`;
@@ -421,9 +372,7 @@
             const size = Math.floor(Math.random() * 25) + 60; 
             const posX = Math.random() * (window.innerWidth - (size + 40)); 
             
-            // Vitesse de la bulle (ralentie si Gelé est actif)
-            let speedModifier = isFrozen ? 0.5 : speedMultiplier;
-            let duration = Math.max(1.2, (baseSpeed / speedModifier) - (Math.random() * 0.3));
+            let duration = Math.max(1.2, (baseSpeed / speedMultiplier) - (Math.random() * 0.3));
 
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
@@ -441,31 +390,16 @@
                 lastPopTime = Date.now();
                 createExplosion(parseFloat(wrapper.style.left) + (size/2) + 20, window.innerHeight - (wrapper.getBoundingClientRect().bottom - (size/2)), bubbleType);
 
-                // --- EFFETS SELON LE TYPE DE BULLE ---
-                if (bubbleType === "bomb") {
-                    combo = 0;
-                    wrapper.remove();
-                    loseLife(); // Perte d'une vie immédiate !
-                    return;
-                } 
-                
                 combo++;
-                // Animation de pop sur l'indicateur de combo
                 let cmbDisplay = document.getElementById('combo-display');
                 cmbDisplay.style.transform = "scale(1.2)";
                 setTimeout(() => cmbDisplay.style.transform = "scale(1)", 100);
 
                 if (bubbleType === "rainbow") {
                     score += 50 * combo;
-                    let gained = magnetActive ? 30 : 15;
+                    let gained = magnetActive ? 20 : 10;
                     coins += gained;
-                } else if (bubbleType === "freeze") {
-                    score += 10 * combo;
-                    let gained = magnetActive ? 4 : 2;
-                    coins += gained;
-                    triggerFreezeEffect();
                 } else {
-                    // Bulle normale
                     score += 10 * combo;
                     let gained = magnetActive ? 2 : 1;
                     coins += gained;
@@ -478,37 +412,18 @@
 
             wrapper.addEventListener('animationend', () => {
                 wrapper.remove();
-                // On ne perd une vie à la fuite de la bulle QUE si c'est une bulle normale, rainbow ou freeze (pas la bombe !)
-                if (bubbleType !== "bomb") {
-                    combo = 0; // Le combo se brise si une bulle s'échappe
-                    updateHUD();
-                    loseLife();
-                }
+                combo = 0; 
+                updateHUD();
+                loseLife();
             });
 
             document.getElementById('game-container').appendChild(wrapper);
         }
 
-        // Effet de ralentissement (Bulle Gelée)
-        function triggerFreezeEffect() {
-            isFrozen = true;
-            document.getElementById('freeze-overlay').style.opacity = 1;
-            if (freezeTimeout) clearTimeout(freezeTimeout);
-            
-            freezeTimeout = setTimeout(() => {
-                isFrozen = false;
-                document.getElementById('freeze-overlay').style.opacity = 0;
-            }, 4000); // Dure 4 secondes
-        }
-
-        // Système de particules d'explosion
         function createExplosion(x, y, type) {
             let colors = ["#fff", "rgba(255,255,255,0.5)"];
-            if (type === "bomb") colors = ["#ff3333", "#ff0055", "#000"];
-            else if (type === "freeze") colors = ["#7dd3fc", "#38bdf8", "#e0f2fe"];
-            else if (type === "rainbow") colors = ["#ff0055", "#00ffcc", "#ffcc00", "#ff00ff"];
+            if (type === "rainbow") colors = ["#ff0055", "#00ffcc", "#ffcc00", "#ff00ff"];
             else {
-                // Couleurs basées sur le skin actuel
                 if (currentSkin === "neon") colors = ["#00ffcc", "#00a8ff"];
                 else if (currentSkin === "star") colors = ["#ffbb00", "#ffea00", "#fff"];
                 else if (currentSkin === "donut") colors = ["#ff00ff", "#00ffff"];
@@ -539,7 +454,7 @@
                     let curBottom = parseFloat(p.style.bottom);
                     p.style.left = (curLeft + velX) + 'px';
                     p.style.bottom = (curBottom + velY) + 'px';
-                    velY -= 0.1; // Légère gravité
+                    velY -= 0.1; 
                     opacity -= 0.04;
                     p.style.opacity = opacity;
 
@@ -570,14 +485,11 @@
         function gameOver() {
             isPlaying = false;
             if (gameTimeout) clearTimeout(gameTimeout);
-            if (freezeTimeout) clearTimeout(freezeTimeout);
             document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
-            document.getElementById('freeze-overlay').style.opacity = 0;
 
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
 
-            // Vérification et sauvegarde du Record personnel (HighScore)
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
@@ -609,13 +521,11 @@
             document.getElementById('main-menu').style.display = 'flex';
         }
 
-        // Clics Boutique (Skins + Upgrades)
         document.querySelectorAll('.skin-option').forEach(option => {
             option.addEventListener('click', () => {
                 let id = option.getAttribute('data-skin');
                 let upgrade = option.getAttribute('data-upgrade');
                 
-                // GESTION DES SKINS
                 if (id) {
                     if (unlockedSkins.includes(id)) {
                         currentSkin = id;
@@ -634,7 +544,6 @@
                     }
                 }
                 
-                // GESTION DES UPGRADES (Achat à usage unique pour la prochaine partie)
                 if (upgrade) {
                     if (upgrade === "shield") {
                         if (hasShieldBought) return;
@@ -643,7 +552,7 @@
                             hasShieldBought = true;
                             localStorage.setItem('totalCoins', totalCoins);
                             document.getElementById('bank-count').innerText = totalCoins;
-                        } else { alert("Pas assez de pièces pour le Bouclier !"); }
+                        } else { alert("Pas assez de pièces !"); }
                     }
                     if (upgrade === "magnet") {
                         if (hasMagnetBought) return;
@@ -652,7 +561,7 @@
                             hasMagnetBought = true;
                             localStorage.setItem('totalCoins', totalCoins);
                             document.getElementById('bank-count').innerText = totalCoins;
-                        } else { alert("Pas assez de pièces pour l'Aimant !"); }
+                        } else { alert("Pas assez de pièces !"); }
                     }
                 }
 
@@ -661,7 +570,6 @@
         });
 
         function updateSkinsUI() {
-            // Affichage des skins
             document.querySelectorAll('.skin-option[data-skin]').forEach(option => {
                 let id = option.getAttribute('data-skin');
                 let priceTag = option.querySelector('.price-tag');
@@ -675,7 +583,6 @@
                 }
             });
 
-            // Affichage des Upgrades
             let shieldTag = document.getElementById('shield-status');
             let shieldBtn = document.getElementById('upgrade-shield');
             if (hasShieldBought) {
