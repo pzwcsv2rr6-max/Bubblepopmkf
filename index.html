@@ -59,17 +59,29 @@
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
         }
         
-        /* Bulles */
-        .bubble {
+        /* --- ZONE DE CLIC AGRANDIE (INVISIBLE) --- */
+        .bubble-wrapper {
             position: absolute;
-            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Crée une marge invisible de 20px tout autour pour capter les doigts qui dérapent */
+            padding: 20px; 
+            z-index: 5;
+            cursor: pointer;
             animation: floatUp linear forwards;
+        }
+
+        /* Bulles réelles (le visuel reste propre) */
+        .bubble {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 30px;
-            z-index: 5;
-            transition: transform 0.1s ease;
+            pointer-events: none; /* L'enveloppe extérieure gère le clic */
         }
         .skin-classic {
             background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 70%);
@@ -232,22 +244,22 @@
 </head>
 <body>
 
-    <div id="game-container">
+    <div id="game-container" onclick="triggerMiss()">
         
-        <div id="hud">
+        <div id="hud" onclick="event.stopPropagation()">
             <div id="score-display" class="hud-item">Score: 0</div>
             <div id="speed-display" class="hud-item">Vitesse: x1.0</div>
             <div id="coins-display" class="hud-item">💰 0</div>
             <div id="lives-display" class="hud-item">Vies: ❤️❤️❤️</div>
         </div>
         
-        <div id="main-menu" class="screen">
+        <div id="main-menu" class="screen" onclick="event.stopPropagation()">
             <h1 class="glow-title">Bubble Pop</h1>
             <button class="btn" id="start-btn">Jouer</button>
             <button class="btn btn-secondary" id="skins-btn">Boutique Skins</button>
         </div>
 
-        <div id="game-over-menu" class="screen" style="display: none;">
+        <div id="game-over-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
             <h1 class="glow-title red-title">Game Over</h1>
             <div id="menu-score" style="margin-bottom: 8px; font-size: 19px; color: #ddd; font-weight: 500;"></div>
             <div id="menu-coins-earned" style="margin-bottom: 30px; font-size: 19px; color: #ffd700; font-weight: 600;"></div>
@@ -256,7 +268,7 @@
             <button class="btn btn-secondary" id="home-btn" style="background: rgba(255,255,255,0.02);">Menu Principal</button>
         </div>
 
-        <div id="skins-menu" class="screen" style="display: none;">
+        <div id="skins-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
             <h1 class="glow-title" style="font-size: 32px; margin-bottom: 15px;">Boutique</h1>
             <div class="coins-bank">Mes Pièces: <span id="bank-count">0</span> 💰</div>
             <div class="skins-grid">
@@ -294,6 +306,7 @@
         let lives = 3;
         let isPlaying = false;
         let gameTimeout = null;
+        let lastPopTime = 0;
 
         let baseSpawnDelay = 1200; 
         let baseSpeed = 4.5;       
@@ -306,6 +319,12 @@
         document.getElementById('skins-btn').addEventListener('click', openSkins);
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
+        
+        function triggerMiss() {
+            if (!isPlaying) return;
+            if (Date.now() - lastPopTime < 100) return; // Sécurité anti multi-clic un poil plus longue
+            loseLife();
+        }
 
         function startGame() {
             document.getElementById('main-menu').style.display = 'none';
@@ -317,7 +336,7 @@
             speedMultiplier = 1.0;
             isPlaying = true;
             
-            document.querySelectorAll('.bubble').forEach(b => b.remove());
+            document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
             if (gameTimeout) clearTimeout(gameTimeout);
             
             updateHUD();
@@ -336,40 +355,50 @@
         function createBubble() {
             if (!isPlaying) return;
 
+            // Création de la zone de clic élargie
+            const wrapper = document.createElement('div');
+            wrapper.className = 'bubble-wrapper';
+
+            // Création de la bulle visuelle à l'intérieur
             const bubble = document.createElement('div');
             bubble.className = `bubble skin-${currentSkin}`;
 
-            // Agrandissement léger de la taille minimale des bulles pour faciliter le ciblage
-            const size = Math.floor(Math.random() * 25) + 65; 
-            const posX = Math.random() * (window.innerWidth - size);
+            const size = Math.floor(Math.random() * 25) + 60; 
+            const posX = Math.random() * (window.innerWidth - (size + 40)); // Calibré avec la zone invisible
             
             let duration = Math.max(1.0, (baseSpeed / speedMultiplier) - (Math.random() * 0.3));
 
+            // On donne la taille à la bulle interne
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
-            bubble.style.left = posX + 'px';
-            bubble.style.bottom = -size + 'px';
-            bubble.style.animationDuration = duration + 's';
 
-            // Utilisation de pointerdown pour une réactivité immédiate sur écran tactile
-            bubble.addEventListener('pointerdown', function(e) {
-                e.preventDefault();
+            // On positionne le wrapper global
+            wrapper.style.left = posX + 'px';
+            wrapper.style.bottom = -(size + 40) + 'px';
+            wrapper.style.animationDuration = duration + 's';
+
+            wrapper.appendChild(bubble);
+
+            wrapper.onclick = function(e) {
+                e.stopPropagation(); // Bloque l'erreur du fond d'écran !
                 if (!isPlaying) return;
+                
+                lastPopTime = Date.now();
                 
                 score += 10;
                 coins += Math.max(1, Math.round(0.25 * speedMultiplier)); 
                 speedMultiplier += 0.04; 
 
                 updateHUD();
-                bubble.remove();
+                wrapper.remove();
+            };
+
+            wrapper.addEventListener('animationend', () => {
+                wrapper.remove();
+                loseLife();
             });
 
-            bubble.addEventListener('animationend', () => {
-                bubble.remove();
-                loseLife(); // On ne perd une vie QUE si la bulle sort de l'écran
-            });
-
-            document.getElementById('game-container').appendChild(bubble);
+            document.getElementById('game-container').appendChild(wrapper);
         }
 
         function loseLife() {
@@ -389,7 +418,7 @@
         function gameOver() {
             isPlaying = false;
             if (gameTimeout) clearTimeout(gameTimeout);
-            document.querySelectorAll('.bubble').forEach(b => b.remove());
+            document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
 
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
