@@ -21,7 +21,6 @@
             background: #0a0a12;
         }
         
-        /* Fond de jeu spatial/cyber */
         #game-container {
             position: relative;
             width: 100%;
@@ -29,37 +28,38 @@
             background: radial-gradient(circle at center, #18182c 0%, #07070c 100%);
         }
 
-        /* HUD Premium */
+        /* HUD */
         #hud {
             position: absolute;
             top: 15px;
             left: 0;
             width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 0 15px;
             color: #fff;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
-            letter-spacing: 1px;
             z-index: 10;
             text-transform: uppercase;
         }
+        @media(min-width: 360px) {
+            #hud { display: flex; justify-content: space-between; font-size: 13px; }
+        }
         .hud-item {
             background: rgba(255, 255, 255, 0.05);
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
         }
-        #coins-display {
-            color: #ffd700;
-            border-color: rgba(255, 215, 0, 0.2);
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
-        }
+        #coins-display { color: #ffd700; border-color: rgba(255, 215, 0, 0.2); }
+        #combo-display { color: #ff3377; border-color: rgba(255, 51, 119, 0.2); font-weight: 800; transform: scale(1); transition: transform 0.1s ease; }
         
-        /* --- ZONE DE CLIC AGRANDIE (INVISIBLE) --- */
+        /* Zone de clic élargie */
         .bubble-wrapper {
             position: absolute;
             display: flex;
@@ -71,15 +71,15 @@
             animation: floatUp linear forwards;
         }
 
-        /* Bulles réelles (100% Rondes, sans emoji) */
         .bubble {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             pointer-events: none;
+            position: relative;
         }
 
-        /* --- STYLES DES SKINS EN RONDS LUMINEUX --- */
+        /* --- STYLES DES SKINS --- */
         .skin-classic {
             background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 70%);
             border: 2px solid rgba(255,255,255,0.8);
@@ -111,11 +111,47 @@
             box-shadow: 0 0 25px #ff3300, 0 0 10px #ffea00, inset -4px -4px 10px rgba(0,0,0,0.5);
         }
 
-        @keyframes floatUp {
-            to { transform: translateY(-120vh); }
+        /* --- STYLES DES BULLES SPECIALES --- */
+        .bubble-rainbow {
+            background: linear-gradient(45deg, #ff0055, #00ffcc, #ffcc00, #ff00ff);
+            background-size: 300% 300%;
+            animation: rainbowGlow 2s ease infinite alternate;
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px #fff, inset 0 0 10px rgba(255,255,255,0.5);
+        }
+        @keyframes rainbowGlow { 0% {background-position:0% 50%} 100% {background-position:100% 50%} }
+        
+        .bubble-freeze {
+            background: radial-gradient(circle at 30% 30%, #e0f2fe 0%, #38bdf8 70%);
+            border: 2px solid #bae6fd;
+            box-shadow: 0 0 20px #38bdf8, inset 0 0 8px #fff;
+        }
+        .bubble-freeze::after {
+            content: "❄️"; position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size: 20px;
         }
 
-        /* Écrans de Menu Cyberpunk */
+        .bubble-bomb {
+            background: radial-gradient(circle at center, #222 0%, #000 80%);
+            border: 3px solid #ff3333;
+            box-shadow: 0 0 15px #ff3333;
+            animation: pulseBomb 0.5s ease infinite alternate;
+        }
+        .bubble-bomb::after {
+            content: "💥"; position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size: 20px;
+        }
+        @keyframes pulseBomb { 0% { transform: scale(1); } 100% { transform: scale(1.08); box-shadow: 0 0 25px #ff3333; } }
+
+        /* Particules d'explosion */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        @keyframes floatUp { to { transform: translateY(-120vh); } }
+
+        /* Écrans de Menu */
         .screen {
             position: absolute;
             top: 0;
@@ -136,9 +172,8 @@
         }
         @keyframes fadeIn { to { opacity: 1; } }
 
-        /* Titres Lumineux */
         .glow-title {
-            font-size: 42px;
+            font-size: 38px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 4px;
@@ -146,176 +181,149 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 2px 10px rgba(0,255,204,0.3));
-            margin-bottom: 30px;
+            margin-bottom: 5px;
             text-align: center;
         }
-        .red-title {
-            background: linear-gradient(45deg, #ff3333, #ff007b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 10px rgba(255,51,51,0.3));
-        }
-
-        /* Boutons Modernes */
-        .btn {
-            padding: 14px 40px;
-            font-size: 18px;
+        #menu-highscore {
+            color: #00ffcc;
             font-weight: 700;
-            text-transform: uppercase;
+            font-size: 14px;
             letter-spacing: 1px;
-            border: none;
-            border-radius: 30px;
-            background: linear-gradient(90deg, #00ffcc, #00a8ff);
-            color: #05050a;
-            margin: 10px 0;
-            cursor: pointer;
-            width: 240px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.3);
-            transition: all 0.2s ease;
+            margin-bottom: 30px;
+            text-transform: uppercase;
         }
-        .btn:active {
-            transform: scale(0.96);
-            box-shadow: 0 2px 10px rgba(0, 255, 204, 0.2);
+        .red-title { background: linear-gradient(45deg, #ff3333, #ff007b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 10px rgba(255,51,51,0.3)); }
+
+        .btn {
+            padding: 14px 40px; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: none; border-radius: 30px;
+            background: linear-gradient(90deg, #00ffcc, #00a8ff); color: #05050a; margin: 10px 0; cursor: pointer; width: 240px; text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.3); transition: all 0.2s ease;
         }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.04);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: none;
-        }
-        .btn-secondary:active {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(0, 255, 204, 0.2); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.04); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: none; }
         
-        /* Grille Boutique Améliorée */
-        .coins-bank {
-            font-size: 20px;
-            color: #ffd700;
-            font-weight: 600;
-            margin-bottom: 20px;
-            background: rgba(255, 215, 0, 0.1);
-            padding: 8px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+        .coins-bank { font-size: 18px; color: #ffd700; font-weight: 600; margin-bottom: 15px; background: rgba(255, 215, 0, 0.1); padding: 6px 20px; border-radius: 20px; border: 1px solid rgba(255, 215, 0, 0.2); }
+        
+        /* Menu Boutique Défilant */
+        .shop-container {
+            width: 90%;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .shop-section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #aaa;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+            margin-top: 5px;
         }
         .skins-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-            width: 88%;
-            max-height: 48vh;
-            overflow-y: auto;
-            padding: 5px;
+            gap: 12px;
         }
         .skin-option {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 12px;
+            text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s ease;
         }
-        .skin-option:active {
-            transform: scale(0.95);
-        }
-        .skin-option.active {
-            border-color: #00ffcc;
-            background: rgba(0, 255, 204, 0.06);
-            box-shadow: inset 0 0 10px rgba(0, 255, 204, 0.1), 0 0 15px rgba(0, 255, 204, 0.1);
-        }
-        .preview {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-        }
-        .skin-name {
-            font-size: 15px;
-            font-weight: 600;
-            color: #e0e0e6;
-        }
-        .price-tag {
-            font-size: 13px;
-            color: #ffd700;
-            font-weight: 700;
-            background: rgba(0,0,0,0.3);
-            padding: 4px 10px;
-            border-radius: 12px;
-            width: 100%;
-        }
-        .skin-option.active .price-tag {
-            color: #00ffcc;
+        .skin-option:active { transform: scale(0.95); }
+        .skin-option.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.06); box-shadow: inset 0 0 10px rgba(0, 255, 204, 0.1); }
+        .preview { width: 40px; height: 40px; border-radius: 50%; }
+        .skin-name { font-size: 13px; font-weight: 600; color: #e0e0e6; }
+        .price-tag { font-size: 12px; color: #ffd700; font-weight: 700; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; width: 100%; }
+        .skin-option.active .price-tag { color: #00ffcc; }
+        
+        /* Effet visuel gelé sur tout l'écran */
+        #freeze-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(56, 189, 248, 0.15);
+            box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.5);
+            pointer-events: none; z-index: 2; opacity: 0; transition: opacity 0.3s ease;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container" onclick="triggerMiss()">
+        <div id="freeze-overlay"></div>
         
         <div id="hud" onclick="event.stopPropagation()">
             <div id="score-display" class="hud-item">Score: 0</div>
-            <div id="speed-display" class="hud-item">Vitesse: x1.0</div>
+            <div id="combo-display" class="hud-item">Combo: x0</div>
             <div id="coins-display" class="hud-item">💰 0</div>
             <div id="lives-display" class="hud-item">Vies: ❤️❤️❤️</div>
         </div>
         
         <div id="main-menu" class="screen" onclick="event.stopPropagation()">
             <h1 class="glow-title">Bubble Pop</h1>
+            <div id="menu-highscore">Meilleur Score: 0</div>
             <button class="btn" id="start-btn">Jouer</button>
-            <button class="btn btn-secondary" id="skins-btn">Boutique Skins</button>
+            <button class="btn btn-secondary" id="skins-btn">Boutique & Upgrades</button>
         </div>
 
         <div id="game-over-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
             <h1 class="glow-title red-title">Game Over</h1>
-            <div id="menu-score" style="margin-bottom: 8px; font-size: 19px; color: #ddd; font-weight: 500;"></div>
-            <div id="menu-coins-earned" style="margin-bottom: 30px; font-size: 19px; color: #ffd700; font-weight: 600;"></div>
-            
+            <div id="menu-score" style="margin-bottom: 4px; font-size: 18px; color: #ddd;"></div>
+            <div id="menu-coins-earned" style="margin-bottom: 25px; font-size: 18px; color: #ffd700; font-weight: 600;"></div>
             <button class="btn" id="retry-btn">Rejouer</button>
-            <button class="btn btn-secondary" id="home-btn" style="background: rgba(255,255,255,0.02);">Menu Principal</button>
+            <button class="btn btn-secondary" id="home-btn">Menu Principal</button>
         </div>
 
         <div id="skins-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
-            <h1 class="glow-title" style="font-size: 32px; margin-bottom: 15px;">Boutique</h1>
+            <h1 class="glow-title" style="font-size: 28px; margin-bottom: 10px;">Boutique</h1>
             <div class="coins-bank">Mes Pièces: <span id="bank-count">0</span> 💰</div>
-            <div class="skins-grid">
-                <div class="skin-option active" data-skin="classic">
-                    <div class="preview skin-classic"></div><span class="skin-name">Classique</span><span class="price-tag">Équipé</span>
+            
+            <div class="shop-container">
+                <div class="shop-section-title">Skins de bulles</div>
+                <div class="skins-grid">
+                    <div class="skin-option active" data-skin="classic"><div class="preview skin-classic"></div><span class="skin-name">Classique</span><span class="price-tag">Équipé</span></div>
+                    <div class="skin-option" data-skin="neon"><div class="preview skin-neon"></div><span class="skin-name">Néon Lumineux</span><span class="price-tag">50 💰</span></div>
+                    <div class="skin-option" data-skin="star"><div class="preview skin-star"></div><span class="skin-name">Rond Solaire</span><span class="price-tag">150 💰</span></div>
+                    <div class="skin-option" data-skin="donut"><div class="preview skin-donut"></div><span class="skin-name">Rond Plasma</span><span class="price-tag">300 💰</span></div>
+                    <div class="skin-option" data-skin="diamond"><div class="preview skin-diamond"></div><span class="skin-name">Rond Cristal</span><span class="price-tag">500 💰</span></div>
+                    <div class="skin-option" data-skin="fire"><div class="preview skin-fire"></div><span class="skin-name">Rond Infernal</span><span class="price-tag">1000 💰</span></div>
                 </div>
-                <div class="skin-option" data-skin="neon">
-                    <div class="preview skin-neon"></div><span class="skin-name">Néon Lumineux</span><span class="price-tag">50 💰</span>
-                </div>
-                <div class="skin-option" data-skin="star">
-                    <div class="preview skin-star"></div><span class="skin-name">Rond Solaire</span><span class="price-tag">150 💰</span>
-                </div>
-                <div class="skin-option" data-skin="donut">
-                    <div class="preview skin-donut"></div><span class="skin-name">Rond Plasma</span><span class="price-tag">300 💰</span>
-                </div>
-                <div class="skin-option" data-skin="diamond">
-                    <div class="preview skin-diamond"></div><span class="skin-name">Rond Cristal</span><span class="price-tag">500 💰</span>
-                </div>
-                <div class="skin-option" data-skin="fire">
-                    <div class="preview skin-fire"></div><span class="skin-name">Rond Infernal</span><span class="price-tag">1000 💰</span>
+                
+                <div class="shop-section-title">Améliorations (Upgrades)</div>
+                <div class="skins-grid">
+                    <div class="skin-option" id="upgrade-shield" data-upgrade="shield">
+                        <span style="font-size:24px;">🛡️</span><span class="skin-name">Bouclier (+1 Vie)</span><span class="price-tag" id="shield-status">200 💰</span>
+                    </div>
+                    <div class="skin-option" id="upgrade-magnet" data-upgrade="magnet">
+                        <span style="font-size:24px;">🧲</span><span class="skin-name">Aimant (Coins x2)</span><span class="price-tag" id="magnet-status">400 💰</span>
+                    </div>
                 </div>
             </div>
-            <button class="btn btn-secondary" id="back-btn">Retour</button>
+            <button class="btn btn-secondary" id="back-btn" style="margin-top:10px;">Retour</button>
         </div>
     </div>
 
     <script>
         let score = 0;
         let coins = 0;
+        let combo = 0;
         
         let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
+        let highScore = parseInt(localStorage.getItem('highScore')) || 0;
         let currentSkin = localStorage.getItem('currentSkin') || 'classic';
         let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
         
+        // États des upgrades achetés pour LA PROCHAINE partie
+        let hasShieldBought = false;
+        let hasMagnetBought = false;
+        
+        // États actifs PENDANT la partie en cours
+        let shieldActive = false;
+        let magnetActive = false;
+        let isFrozen = false;
+        let freezeTimeout = null;
+
         let lives = 3;
         let isPlaying = false;
         let gameTimeout = null;
@@ -333,9 +341,14 @@
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
         
+        // Initialisation de l'affichage du HighScore au chargement
+        document.getElementById('menu-highscore').innerText = "Meilleur Score: " + highScore;
+
         function triggerMiss() {
             if (!isPlaying) return;
             if (Date.now() - lastPopTime < 100) return; 
+            combo = 0; // Le combo se brise si on tape à côté
+            updateHUD();
             loseLife();
         }
 
@@ -345,12 +358,25 @@
             
             score = 0;
             coins = 0;
-            lives = 3;
+            combo = 0;
             speedMultiplier = 1.0;
             isPlaying = true;
+            isFrozen = false;
+            document.getElementById('freeze-overlay').style.opacity = 0;
+            
+            // Application des Upgrades achetés
+            shieldActive = hasShieldBought;
+            magnetActive = hasMagnetBought;
+            
+            // Reset des boutons d'upgrades pour la boutique
+            hasShieldBought = false;
+            hasMagnetBought = false;
+
+            lives = shieldActive ? 4 : 3;
             
             document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
             if (gameTimeout) clearTimeout(gameTimeout);
+            if (freezeTimeout) clearTimeout(freezeTimeout);
             
             updateHUD();
             gameLoop();
@@ -361,7 +387,9 @@
             
             createBubble();
             
-            let currentSpawnDelay = Math.max(350, baseSpawnDelay / Math.sqrt(speedMultiplier));
+            // Si l'effet Gelé est actif, on divise le rythme d'apparition par 1.8
+            let modifier = isFrozen ? 1.8 : 1.0;
+            let currentSpawnDelay = Math.max(380, (baseSpawnDelay / Math.sqrt(speedMultiplier)) * modifier);
             gameTimeout = setTimeout(gameLoop, currentSpawnDelay);
         }
 
@@ -372,12 +400,30 @@
             wrapper.className = 'bubble-wrapper';
 
             const bubble = document.createElement('div');
-            bubble.className = `bubble skin-${currentSkin}`;
+            
+            // --- TIRAGE AU SORT DU TYPE DE BULLE (RARETÉ) ---
+            let rand = Math.random() * 100;
+            let bubbleType = "normal"; // 85% de chance
+            
+            if (rand < 3) {
+                bubbleType = "bomb";     // 3% chance
+                bubble.className = "bubble bubble-bomb";
+            } else if (rand < 9) {
+                bubbleType = "freeze";   // 6% chance
+                bubble.className = "bubble bubble-freeze";
+            } else if (rand < 15) {
+                bubbleType = "rainbow";  // 6% chance
+                bubble.className = "bubble bubble-rainbow";
+            } else {
+                bubble.className = `bubble skin-${currentSkin}`;
+            }
 
             const size = Math.floor(Math.random() * 25) + 60; 
             const posX = Math.random() * (window.innerWidth - (size + 40)); 
             
-            let duration = Math.max(1.0, (baseSpeed / speedMultiplier) - (Math.random() * 0.3));
+            // Vitesse de la bulle (ralentie si Gelé est actif)
+            let speedModifier = isFrozen ? 0.5 : speedMultiplier;
+            let duration = Math.max(1.2, (baseSpeed / speedModifier) - (Math.random() * 0.3));
 
             bubble.style.width = size + 'px';
             bubble.style.height = size + 'px';
@@ -393,21 +439,118 @@
                 if (!isPlaying) return;
                 
                 lastPopTime = Date.now();
-                
-                score += 10;
-                coins += Math.max(1, Math.round(0.25 * speedMultiplier)); 
-                speedMultiplier += 0.04; 
+                createExplosion(parseFloat(wrapper.style.left) + (size/2) + 20, window.innerHeight - (wrapper.getBoundingClientRect().bottom - (size/2)), bubbleType);
 
+                // --- EFFETS SELON LE TYPE DE BULLE ---
+                if (bubbleType === "bomb") {
+                    combo = 0;
+                    wrapper.remove();
+                    loseLife(); // Perte d'une vie immédiate !
+                    return;
+                } 
+                
+                combo++;
+                // Animation de pop sur l'indicateur de combo
+                let cmbDisplay = document.getElementById('combo-display');
+                cmbDisplay.style.transform = "scale(1.2)";
+                setTimeout(() => cmbDisplay.style.transform = "scale(1)", 100);
+
+                if (bubbleType === "rainbow") {
+                    score += 50 * combo;
+                    let gained = magnetActive ? 30 : 15;
+                    coins += gained;
+                } else if (bubbleType === "freeze") {
+                    score += 10 * combo;
+                    let gained = magnetActive ? 4 : 2;
+                    coins += gained;
+                    triggerFreezeEffect();
+                } else {
+                    // Bulle normale
+                    score += 10 * combo;
+                    let gained = magnetActive ? 2 : 1;
+                    coins += gained;
+                }
+
+                speedMultiplier += 0.03; 
                 updateHUD();
                 wrapper.remove();
             };
 
             wrapper.addEventListener('animationend', () => {
                 wrapper.remove();
-                loseLife();
+                // On ne perd une vie à la fuite de la bulle QUE si c'est une bulle normale, rainbow ou freeze (pas la bombe !)
+                if (bubbleType !== "bomb") {
+                    combo = 0; // Le combo se brise si une bulle s'échappe
+                    updateHUD();
+                    loseLife();
+                }
             });
 
             document.getElementById('game-container').appendChild(wrapper);
+        }
+
+        // Effet de ralentissement (Bulle Gelée)
+        function triggerFreezeEffect() {
+            isFrozen = true;
+            document.getElementById('freeze-overlay').style.opacity = 1;
+            if (freezeTimeout) clearTimeout(freezeTimeout);
+            
+            freezeTimeout = setTimeout(() => {
+                isFrozen = false;
+                document.getElementById('freeze-overlay').style.opacity = 0;
+            }, 4000); // Dure 4 secondes
+        }
+
+        // Système de particules d'explosion
+        function createExplosion(x, y, type) {
+            let colors = ["#fff", "rgba(255,255,255,0.5)"];
+            if (type === "bomb") colors = ["#ff3333", "#ff0055", "#000"];
+            else if (type === "freeze") colors = ["#7dd3fc", "#38bdf8", "#e0f2fe"];
+            else if (type === "rainbow") colors = ["#ff0055", "#00ffcc", "#ffcc00", "#ff00ff"];
+            else {
+                // Couleurs basées sur le skin actuel
+                if (currentSkin === "neon") colors = ["#00ffcc", "#00a8ff"];
+                else if (currentSkin === "star") colors = ["#ffbb00", "#ffea00", "#fff"];
+                else if (currentSkin === "donut") colors = ["#ff00ff", "#00ffff"];
+                else if (currentSkin === "diamond") colors = ["#70d6ff", "#0077b6", "#fff"];
+                else if (currentSkin === "fire") colors = ["#ff3300", "#ffea00", "#990000"];
+            }
+
+            for (let i = 0; i < 6; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = x + 'px';
+                p.style.bottom = y + 'px';
+                let pSize = Math.floor(Math.random() * 6) + 6;
+                p.style.width = pSize + 'px';
+                p.style.height = pSize + 'px';
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                p.style.boxShadow = "0 0 8px " + p.style.backgroundColor;
+                document.getElementById('game-container').appendChild(p);
+
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 4 + 3;
+                let velX = Math.cos(angle) * speed;
+                let velY = Math.sin(angle) * speed;
+                let opacity = 1;
+
+                function moveParticle() {
+                    let curLeft = parseFloat(p.style.left);
+                    let curBottom = parseFloat(p.style.bottom);
+                    p.style.left = (curLeft + velX) + 'px';
+                    p.style.bottom = (curBottom + velY) + 'px';
+                    velY -= 0.1; // Légère gravité
+                    opacity -= 0.04;
+                    p.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(moveParticle);
+                    } else {
+                        p.remove();
+                    }
+                }
+                requestAnimationFrame(moveParticle);
+            }
         }
 
         function loseLife() {
@@ -419,7 +562,7 @@
 
         function updateHUD() {
             document.getElementById('score-display').innerText = "Score: " + score;
-            document.getElementById('speed-display').innerText = "Vitesse: x" + speedMultiplier.toFixed(1);
+            document.getElementById('combo-display').innerText = "Combo: x" + combo;
             document.getElementById('coins-display').innerText = "💰 " + coins;
             document.getElementById('lives-display').innerText = "Vies: " + "❤️".repeat(Math.max(0, lives));
         }
@@ -427,10 +570,19 @@
         function gameOver() {
             isPlaying = false;
             if (gameTimeout) clearTimeout(gameTimeout);
+            if (freezeTimeout) clearTimeout(freezeTimeout);
             document.querySelectorAll('.bubble-wrapper').forEach(b => b.remove());
+            document.getElementById('freeze-overlay').style.opacity = 0;
 
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
+
+            // Vérification et sauvegarde du Record personnel (HighScore)
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                document.getElementById('menu-highscore').innerText = "Meilleur Score: " + highScore;
+            }
 
             document.getElementById('menu-score').innerText = "Score final : " + score;
             document.getElementById('menu-coins-earned').innerText = "Pièces récoltées : +" + coins + " 💰";
@@ -441,10 +593,7 @@
         function resetToMainMenu() {
             document.getElementById('game-over-menu').style.display = 'none';
             document.getElementById('main-menu').style.display = 'flex';
-            score = 0;
-            coins = 0;
-            lives = 3;
-            speedMultiplier = 1.0;
+            score = 0; coins = 0; combo = 0; lives = 3; speedMultiplier = 1.0;
             updateHUD();
         }
 
@@ -460,52 +609,89 @@
             document.getElementById('main-menu').style.display = 'flex';
         }
 
+        // Clics Boutique (Skins + Upgrades)
         document.querySelectorAll('.skin-option').forEach(option => {
             option.addEventListener('click', () => {
                 let id = option.getAttribute('data-skin');
+                let upgrade = option.getAttribute('data-upgrade');
                 
-                if (unlockedSkins.includes(id)) {
-                    currentSkin = id;
-                    localStorage.setItem('currentSkin', currentSkin);
-                } else {
-                    let price = skinPrices[id];
-                    if (totalCoins >= price) {
-                        totalCoins -= price;
-                        unlockedSkins.push(id);
+                // GESTION DES SKINS
+                if (id) {
+                    if (unlockedSkins.includes(id)) {
                         currentSkin = id;
-                        
-                        localStorage.setItem('totalCoins', totalCoins);
-                        localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
                         localStorage.setItem('currentSkin', currentSkin);
-                        
-                        document.getElementById('bank-count').innerText = totalCoins;
                     } else {
-                        alert("Pas assez de pièces !");
+                        let price = skinPrices[id];
+                        if (totalCoins >= price) {
+                            totalCoins -= price;
+                            unlockedSkins.push(id);
+                            currentSkin = id;
+                            localStorage.setItem('totalCoins', totalCoins);
+                            localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+                            localStorage.setItem('currentSkin', currentSkin);
+                            document.getElementById('bank-count').innerText = totalCoins;
+                        } else { alert("Pas assez de pièces !"); }
                     }
                 }
+                
+                // GESTION DES UPGRADES (Achat à usage unique pour la prochaine partie)
+                if (upgrade) {
+                    if (upgrade === "shield") {
+                        if (hasShieldBought) return;
+                        if (totalCoins >= 200) {
+                            totalCoins -= 200;
+                            hasShieldBought = true;
+                            localStorage.setItem('totalCoins', totalCoins);
+                            document.getElementById('bank-count').innerText = totalCoins;
+                        } else { alert("Pas assez de pièces pour le Bouclier !"); }
+                    }
+                    if (upgrade === "magnet") {
+                        if (hasMagnetBought) return;
+                        if (totalCoins >= 400) {
+                            totalCoins -= 400;
+                            hasMagnetBought = true;
+                            localStorage.setItem('totalCoins', totalCoins);
+                            document.getElementById('bank-count').innerText = totalCoins;
+                        } else { alert("Pas assez de pièces pour l'Aimant !"); }
+                    }
+                }
+
                 updateSkinsUI();
             });
         });
 
         function updateSkinsUI() {
-            document.querySelectorAll('.skin-option').forEach(option => {
+            // Affichage des skins
+            document.querySelectorAll('.skin-option[data-skin]').forEach(option => {
                 let id = option.getAttribute('data-skin');
                 let priceTag = option.querySelector('.price-tag');
                 
                 if (currentSkin === id) {
-                    option.className = "skin-option active";
-                    priceTag.innerText = "Équipé";
+                    option.className = "skin-option active"; priceTag.innerText = "Équipé";
                 } else if (unlockedSkins.includes(id)) {
-                    option.className = "skin-option";
-                    priceTag.innerText = "Débloqué";
+                    option.className = "skin-option"; priceTag.innerText = "Débloqué";
                 } else {
-                    option.className = "skin-option";
-                    priceTag.innerText = skinPrices[id] + " 💰";
+                    option.className = "skin-option"; priceTag.innerText = skinPrices[id] + " 💰";
                 }
             });
-        }
 
-        updateSkinsUI();
+            // Affichage des Upgrades
+            let shieldTag = document.getElementById('shield-status');
+            let shieldBtn = document.getElementById('upgrade-shield');
+            if (hasShieldBought) {
+                shieldBtn.className = "skin-option active"; shieldTag.innerText = "Prêt (1 partie)";
+            } else {
+                shieldBtn.className = "skin-option"; shieldTag.innerText = "200 💰";
+            }
+
+            let magnetTag = document.getElementById('magnet-status');
+            let magnetBtn = document.getElementById('upgrade-magnet');
+            if (hasMagnetBought) {
+                magnetBtn.className = "skin-option active"; magnetTag.innerText = "Prêt (1 partie)";
+            } else {
+                magnetBtn.className = "skin-option"; magnetTag.innerText = "400 💰";
+            }
+        }
     </script>
 </body>
 </html>
