@@ -125,16 +125,6 @@
             box-shadow: 0 0 25px #ff3300, 0 0 10px #ffea00, inset -4px -4px 10px rgba(0,0,0,0.5);
         }
 
-        /* --- BULLE SPECIALE ARC-EN-CIEL --- */
-        .bubble-rainbow {
-            background: linear-gradient(45deg, #ff0055, #00ffcc, #ffcc00, #ff00ff);
-            background-size: 300% 300%;
-            animation: rainbowGlow 2s ease infinite alternate;
-            border: 2px solid #fff;
-            box-shadow: 0 0 20px #fff, inset 0 0 10px rgba(255,255,255,0.5);
-        }
-        @keyframes rainbowGlow { 0% {background-position:0% 50%} 100% {background-position:100% 50%} }
-
         /* Particules d'explosion */
         .particle {
             position: absolute;
@@ -317,11 +307,48 @@
 
         const skinPrices = { neon: 50, star: 150, donut: 300, diamond: 500, fire: 1000 };
 
-        // --- GÉNÉRATEUR AUDIO ULTRA-LÉGER ---
+        // --- MOTEUR AUDIO AUDIO-CONTEXT ---
         let audioCtx = null;
+        let musicInterval = null;
+        let noteIndex = 0;
+
+        // Mélodie rétro simple en boucle pour les menus (Notes en fréquences Hz)
+        const menuMelody = [329.63, 392.00, 523.25, 392.00, 349.23, 440.00, 523.25, 440.00]; 
+
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startMenuMusic();
+            }
+        }
+
+        // Lance la petite musique rétro de fond
+        function startMenuMusic() {
+            if (musicInterval) return;
+            musicInterval = setInterval(() => {
+                if (isPlaying || !audioCtx) return; // Pas de musique de menu pendant qu'on joue
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = "triangle"; 
+                    osc.frequency.setValueAtTime(menuMelody[noteIndex], audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime); // Volume doux en fond
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                    
+                    noteIndex = (noteIndex + 1) % menuMelody.length;
+                } catch(e) {}
+            }, 300);
+        }
+
+        function stopMenuMusic() {
+            if (musicInterval) {
+                clearInterval(musicInterval);
+                musicInterval = null;
             }
         }
 
@@ -336,8 +363,7 @@
                 let now = audioCtx.currentTime;
 
                 if (type === "pop") {
-                    // Son de pop classique (monte très vite et s'éteint)
-                    let pitch = 400 + Math.min(600, combo * 25); // Devient plus aigu selon le combo !
+                    let pitch = 400 + Math.min(600, combo * 25); 
                     osc.frequency.setValueAtTime(pitch, now);
                     osc.frequency.exponentialRampToValueAtTime(pitch * 1.5, now + 0.05);
                     gain.gain.setValueAtTime(0.15, now);
@@ -345,19 +371,7 @@
                     osc.start(now);
                     osc.stop(now + 0.08);
                 } 
-                else if (type === "rainbow") {
-                    // Son spécial arc-en-ciel mélodieux
-                    osc.type = "triangle";
-                    osc.frequency.setValueAtTime(523.25, now); // Note Do
-                    osc.frequency.setValueAtTime(659.25, now + 0.06); // Note Mi
-                    osc.frequency.setValueAtTime(783.99, now + 0.12); // Note Sol
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                } 
                 else if (type === "error") {
-                    // Gros boum lourd pour l'erreur
                     osc.type = "sawtooth";
                     osc.frequency.setValueAtTime(120, now);
                     osc.frequency.linearRampToValueAtTime(40, now + 0.2);
@@ -369,9 +383,10 @@
             } catch(e) {}
         }
 
-        document.getElementById('start-btn').addEventListener('click', () => { initAudio(); startGame(); });
-        document.getElementById('retry-btn').addEventListener('click', () => { initAudio(); startGame(); });
-        document.getElementById('skins-btn').addEventListener('click', openSkins);
+        // Initialisation de l'audio dès le premier clic utilisateur sur les boutons
+        document.getElementById('start-btn').addEventListener('click', () => { initAudio(); stopMenuMusic(); startGame(); });
+        document.getElementById('retry-btn').addEventListener('click', () => { initAudio(); stopMenuMusic(); startGame(); });
+        document.getElementById('skins-btn').addEventListener('click', () => { initAudio(); openSkins(); });
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
         
@@ -427,13 +442,8 @@
 
             const bubble = document.createElement('div');
             
-            let bubbleType = "normal";
-            if (Math.random() < 0.05) {
-                bubbleType = "rainbow";
-                bubble.className = "bubble bubble-rainbow";
-            } else {
-                bubble.className = `bubble skin-${currentSkin}`;
-            }
+            // --- UNIQUEMENT DES BULLES NORMALES MAINTENANT ---
+            bubble.className = `bubble skin-${currentSkin}`;
 
             const size = Math.floor(Math.random() * 25) + 60; 
             const posX = Math.random() * (window.innerWidth - (size + 40)); 
@@ -454,24 +464,17 @@
                 if (!isPlaying) return;
                 
                 lastPopTime = Date.now();
-                createExplosion(parseFloat(wrapper.style.left) + (size/2) + 20, window.innerHeight - (wrapper.getBoundingClientRect().bottom - (size/2)), bubbleType);
+                createExplosion(parseFloat(wrapper.style.left) + (size/2) + 20, window.innerHeight - (wrapper.getBoundingClientRect().bottom - (size/2)));
 
                 combo++;
                 let cmbDisplay = document.getElementById('combo-display');
                 cmbDisplay.style.transform = "scale(1.2)";
                 setTimeout(() => cmbDisplay.style.transform = "scale(1)", 100);
 
-                if (bubbleType === "rainbow") {
-                    playSound("rainbow"); // Bruitage arc-en-ciel
-                    score += 50 * combo;
-                    let gained = magnetActive ? 20 : 10;
-                    coins += gained;
-                } else {
-                    playSound("pop"); // Bruitage pop classique
-                    score += 10 * combo;
-                    let gained = magnetActive ? 2 : 1;
-                    coins += gained;
-                }
+                playSound("pop"); 
+                score += 10 * combo;
+                let gained = magnetActive ? 2 : 1;
+                coins += gained;
 
                 speedMultiplier += 0.03; 
                 updateHUD();
@@ -488,16 +491,13 @@
             document.getElementById('game-container').appendChild(wrapper);
         }
 
-        function createExplosion(x, y, type) {
+        function createExplosion(x, y) {
             let colors = ["#fff", "rgba(255,255,255,0.5)"];
-            if (type === "rainbow") colors = ["#ff0055", "#00ffcc", "#ffcc00", "#ff00ff"];
-            else {
-                if (currentSkin === "neon") colors = ["#00ffcc", "#00a8ff"];
-                else if (currentSkin === "star") colors = ["#ffbb00", "#ffea00", "#fff"];
-                else if (currentSkin === "donut") colors = ["#ff00ff", "#00ffff"];
-                else if (currentSkin === "diamond") colors = ["#70d6ff", "#0077b6", "#fff"];
-                else if (currentSkin === "fire") colors = ["#ff3300", "#ffea00", "#990000"];
-            }
+            if (currentSkin === "neon") colors = ["#00ffcc", "#00a8ff"];
+            else if (currentSkin === "star") colors = ["#ffbb00", "#ffea00", "#fff"];
+            else if (currentSkin === "donut") colors = ["#ff00ff", "#00ffff"];
+            else if (currentSkin === "diamond") colors = ["#70d6ff", "#0077b6", "#fff"];
+            else if (currentSkin === "fire") colors = ["#ff3300", "#ffea00", "#990000"];
 
             for (let i = 0; i < 6; i++) {
                 const p = document.createElement('div');
@@ -540,7 +540,6 @@
             if (!isPlaying) return;
             lives--;
             
-            // --- ACTION DES MODIFS : SON + FLASH ROUGE ---
             playSound("error");
             const flash = document.getElementById('damage-flash');
             flash.style.opacity = 1;
@@ -575,6 +574,7 @@
             document.getElementById('menu-coins-earned').innerText = "Pièces récoltées : +" + coins + " 💰";
             
             document.getElementById('game-over-menu').style.display = 'flex';
+            startMenuMusic(); // Relance la musique du menu
         }
 
         function resetToMainMenu() {
@@ -582,6 +582,7 @@
             document.getElementById('main-menu').style.display = 'flex';
             score = 0; coins = 0; combo = 0; lives = 3; speedMultiplier = 1.0;
             updateHUD();
+            startMenuMusic(); // Relance la musique du menu
         }
 
         function openSkins() {
