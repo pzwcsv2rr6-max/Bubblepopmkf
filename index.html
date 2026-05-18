@@ -309,7 +309,7 @@
         </div>
 
         <div id="settings-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
-            <h1 class="glow-title" id="settings-title" style="font-size: 28px; margin-between: 20px;">Paramètres</h1>
+            <h1 class="glow-title" id="settings-title" style="font-size: 28px; margin-bottom: 20px;">Paramètres</h1>
             
             <div class="settings-container">
                 <div class="setting-row">
@@ -359,7 +359,7 @@
             es: {
                 play: "Jugar", shop: "Tienda y Mejoras", settings: "Ajustes", highscore: "Record: ",
                 gameover: "Fin del Juego", finalscore: "Puntuación final: ", coinsearned: "Monedas ganadas: +",
-                retry: "Rejugar", home: "Menú Principal", shopTitle: "Tienda", bankLabel: "Mis Monedas:",
+                retry: "Rejugar", home: "Menu Principal", shopTitle: "Tienda", bankLabel: "Mis Monedas:",
                 secSkins: "Aspectos de Burbuja", secUpgrades: "Mejoras", back: "Volver",
                 equipped: "Equipado", unlocked: "Desbloqueado", alertCoins: "¡No tienes suficientes monedas!",
                 hudScore: "Puntos: ", hudCombo: "Combo: x", hudLives: "Vidas: ",
@@ -399,26 +399,57 @@
 
         const skinPrices = { neon: 50, star: 150, donut: 300, diamond: 500, fire: 1000 };
 
-        // --- GESTION DE LA MUSIQUE (FICHIER MP3) ---
+        // --- NOUVEAU MOTEUR AUDIO : MÉLODIE DOUCE ET RELAXANTE ---
         let audioCtx = null;
-        let bgMusic = new Audio('boussole.mp3');
-        bgMusic.loop = true; 
-        bgMusic.volume = 0.25; // Volume de fond modéré
+        let musicInterval = null;
+        let noteIndex = 0;
+
+        // Une mélodie en arpèges très doux (Gamme de Do Majeur / Lam)
+        const softMelody = [
+            261.63, 329.63, 392.00, 523.25, 392.00, 329.63,
+            293.66, 349.23, 440.00, 587.33, 440.00, 349.23,
+            329.63, 392.00, 493.88, 659.25, 493.88, 392.00,
+            261.63, 349.23, 440.00, 523.25, 440.00, 349.23
+        ];
 
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startMenuMusic();
             }
-            startMenuMusic();
         }
 
         function startMenuMusic() {
-            if (!isMusicEnabled || isPlaying) return;
-            bgMusic.play().catch(e => console.log("Attente d'un clic pour lancer le MP3"));
+            if (!isMusicEnabled || musicInterval) return;
+            // Un tempo lent et apaisant (toutes les 450ms)
+            musicInterval = setInterval(() => {
+                if (isPlaying || !audioCtx || !isMusicEnabled) return; 
+                try {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    
+                    osc.type = "sine"; // Onde sinusoïdale pure pour un son de clochette très doux
+                    osc.frequency.setValueAtTime(softMelody[noteIndex], audioCtx.currentTime);
+                    
+                    // Volume très bas et progressif pour ne pas agresser
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime); 
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                    
+                    noteIndex = (noteIndex + 1) % softMelody.length;
+                } catch(e) {}
+            }, 450);
         }
 
         function stopMenuMusic() {
-            bgMusic.pause();
+            if (musicInterval) {
+                clearInterval(musicInterval);
+                musicInterval = null;
+            }
         }
 
         function playSound(type) {
@@ -428,25 +459,29 @@
                 let gain = audioCtx.createGain();
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
+
                 let now = audioCtx.currentTime;
 
                 if (type === "pop") {
-                    let pitch = 400 + Math.min(600, combo * 25); 
+                    // Son de pop cristallin
+                    osc.type = "sine";
+                    let pitch = 500 + Math.min(500, combo * 20); 
                     osc.frequency.setValueAtTime(pitch, now);
-                    osc.frequency.exponentialRampToValueAtTime(pitch * 1.5, now + 0.05);
-                    gain.gain.setValueAtTime(0.15, now);
+                    osc.frequency.exponentialRampToValueAtTime(pitch * 1.2, now + 0.06);
+                    gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
                     osc.start(now);
                     osc.stop(now + 0.08);
                 } 
                 else if (type === "error") {
-                    osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.linearRampToValueAtTime(40, now + 0.2);
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
+                    // Alerte douce descendante
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
                     osc.start(now);
-                    osc.stop(now + 0.2);
+                    osc.stop(now + 0.25);
                 }
             } catch(e) {}
         }
@@ -455,25 +490,21 @@
         function applyLanguage() {
             const t = translations[currentLang];
             
-            // Menu Principal
             document.getElementById('start-btn').innerText = t.play;
             document.getElementById('skins-btn').innerText = t.shop;
             document.getElementById('settings-btn').innerText = t.settings;
             document.getElementById('menu-highscore').innerText = t.highscore + highScore;
 
-            // Game Over
             document.getElementById('go-title').innerText = t.gameover;
             document.getElementById('retry-btn').innerText = t.retry;
             document.getElementById('home-btn').innerText = t.home;
 
-            // Boutique
             document.getElementById('shop-title').innerText = t.shopTitle;
             document.getElementById('shop-bank-label').innerText = t.bankLabel;
             document.getElementById('shop-section-skins').innerText = t.secSkins;
             document.getElementById('shop-section-upgrades').innerText = t.secUpgrades;
             document.getElementById('back-btn').innerText = t.back;
 
-            // Noms des skins
             document.getElementById('skin-name-classic').innerText = t.skinClassic;
             document.getElementById('skin-name-neon').innerText = t.skinNeon;
             document.getElementById('skin-name-star').innerText = t.skinStar;
@@ -481,11 +512,9 @@
             document.getElementById('skin-name-diamond').innerText = t.skinDiamond;
             document.getElementById('skin-name-fire').innerText = t.skinFire;
 
-            // Upgrades
             document.getElementById('upgrade-name-shield').innerText = t.upShield;
             document.getElementById('upgrade-name-magnet').innerText = t.upMagnet;
 
-            // Paramètres
             document.getElementById('settings-title').innerText = t.settings;
             document.getElementById('setting-label-music').innerText = t.setMusic;
             document.getElementById('setting-label-lang').innerText = t.setLang;
@@ -505,7 +534,6 @@
         document.getElementById('settings-btn').addEventListener('click', () => { initAudio(); openSettings(); });
         document.getElementById('settings-back-btn').addEventListener('click', closeSettings);
 
-        // Changement de langue via select
         const langSelect = document.getElementById('lang-select');
         langSelect.value = currentLang;
         langSelect.addEventListener('change', (e) => {
@@ -514,7 +542,6 @@
             applyLanguage();
         });
 
-        // Activation / Désactivation Musique
         const musicToggle = document.getElementById('music-toggle-btn');
         function updateMusicButtonUI() {
             if (isMusicEnabled) {
