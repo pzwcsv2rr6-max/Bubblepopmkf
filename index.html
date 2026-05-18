@@ -232,22 +232,22 @@
 </head>
 <body>
 
-    <div id="game-container" onclick="triggerMiss()">
+    <div id="game-container">
         
-        <div id="hud" onclick="event.stopPropagation()">
+        <div id="hud">
             <div id="score-display" class="hud-item">Score: 0</div>
             <div id="speed-display" class="hud-item">Vitesse: x1.0</div>
             <div id="coins-display" class="hud-item">💰 0</div>
             <div id="lives-display" class="hud-item">Vies: ❤️❤️❤️</div>
         </div>
         
-        <div id="main-menu" class="screen" onclick="event.stopPropagation()">
+        <div id="main-menu" class="screen">
             <h1 class="glow-title">Bubble Pop</h1>
             <button class="btn" id="start-btn">Jouer</button>
             <button class="btn btn-secondary" id="skins-btn">Boutique Skins</button>
         </div>
 
-        <div id="game-over-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
+        <div id="game-over-menu" class="screen" style="display: none;">
             <h1 class="glow-title red-title">Game Over</h1>
             <div id="menu-score" style="margin-bottom: 8px; font-size: 19px; color: #ddd; font-weight: 500;"></div>
             <div id="menu-coins-earned" style="margin-bottom: 30px; font-size: 19px; color: #ffd700; font-weight: 600;"></div>
@@ -256,7 +256,7 @@
             <button class="btn btn-secondary" id="home-btn" style="background: rgba(255,255,255,0.02);">Menu Principal</button>
         </div>
 
-        <div id="skins-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
+        <div id="skins-menu" class="screen" style="display: none;">
             <h1 class="glow-title" style="font-size: 32px; margin-bottom: 15px;">Boutique</h1>
             <div class="coins-bank">Mes Pièces: <span id="bank-count">0</span> 💰</div>
             <div class="skins-grid">
@@ -287,7 +287,6 @@
         let score = 0;
         let coins = 0;
         
-        // --- CHARGEMENT DU STORAGE SAUVEGARDÉ ---
         let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
         let currentSkin = localStorage.getItem('currentSkin') || 'classic';
         let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
@@ -295,7 +294,6 @@
         let lives = 3;
         let isPlaying = false;
         let gameTimeout = null;
-        let lastPopTime = 0;
 
         let baseSpawnDelay = 1200; 
         let baseSpeed = 4.5;       
@@ -308,12 +306,6 @@
         document.getElementById('skins-btn').addEventListener('click', openSkins);
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
-        
-        function triggerMiss() {
-            if (!isPlaying) return;
-            if (Date.now() - lastPopTime < 80) return;
-            loseLife();
-        }
 
         function startGame() {
             document.getElementById('main-menu').style.display = 'none';
@@ -347,7 +339,8 @@
             const bubble = document.createElement('div');
             bubble.className = `bubble skin-${currentSkin}`;
 
-            const size = Math.floor(Math.random() * 25) + 60; 
+            // Agrandissement léger de la taille minimale des bulles pour faciliter le ciblage
+            const size = Math.floor(Math.random() * 25) + 65; 
             const posX = Math.random() * (window.innerWidth - size);
             
             let duration = Math.max(1.0, (baseSpeed / speedMultiplier) - (Math.random() * 0.3));
@@ -358,25 +351,22 @@
             bubble.style.bottom = -size + 'px';
             bubble.style.animationDuration = duration + 's';
 
-            bubble.onclick = function(e) {
-                e.stopPropagation();
+            // Utilisation de pointerdown pour une réactivité immédiate sur écran tactile
+            bubble.addEventListener('pointerdown', function(e) {
+                e.preventDefault();
                 if (!isPlaying) return;
                 
-                lastPopTime = Date.now();
-                
                 score += 10;
-                
                 coins += Math.max(1, Math.round(0.25 * speedMultiplier)); 
-
                 speedMultiplier += 0.04; 
 
                 updateHUD();
                 bubble.remove();
-            };
+            });
 
             bubble.addEventListener('animationend', () => {
                 bubble.remove();
-                loseLife();
+                loseLife(); // On ne perd une vie QUE si la bulle sort de l'écran
             });
 
             document.getElementById('game-container').appendChild(bubble);
@@ -401,7 +391,6 @@
             if (gameTimeout) clearTimeout(gameTimeout);
             document.querySelectorAll('.bubble').forEach(b => b.remove());
 
-            // SAUVEGARDE DES PIÈCES À LA FIN DE LA PARTIE
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
 
@@ -439,7 +428,6 @@
                 
                 if (unlockedSkins.includes(id)) {
                     currentSkin = id;
-                    // SAUVEGARDE DU SKIN ÉQUIPÉ
                     localStorage.setItem('currentSkin', currentSkin);
                 } else {
                     let price = skinPrices[id];
@@ -448,7 +436,6 @@
                         unlockedSkins.push(id);
                         currentSkin = id;
                         
-                        // SAUVEGARDE DES ACHATS ET DU NOUVEAU SKIN
                         localStorage.setItem('totalCoins', totalCoins);
                         localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
                         localStorage.setItem('currentSkin', currentSkin);
@@ -480,7 +467,6 @@
             });
         }
 
-        // Initialisation de la boutique avec les données sauvegardées dès le lancement
         updateSkinsUI();
     </script>
 </body>
