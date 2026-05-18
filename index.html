@@ -309,7 +309,7 @@
         </div>
 
         <div id="settings-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
-            <h1 class="glow-title" id="settings-title" style="font-size: 28px; margin-bottom: 20px;">Paramètres</h1>
+            <h1 class="glow-title" id="settings-title" style="font-size: 28px; margin-between: 20px;">Paramètres</h1>
             
             <div class="settings-container">
                 <div class="setting-row">
@@ -371,7 +371,7 @@
         };
 
         let currentLang = localStorage.getItem('gameLang') || 'fr';
-        let isMusicEnabled = localStorage.getItem('musicEnabled') !== 'false'; // Par défaut true
+        let isMusicEnabled = localStorage.getItem('musicEnabled') !== 'false'; 
 
         let score = 0;
         let coins = 0;
@@ -399,47 +399,26 @@
 
         const skinPrices = { neon: 50, star: 150, donut: 300, diamond: 500, fire: 1000 };
 
-        // --- MOTEUR AUDIO AUDIO-CONTEXT ---
+        // --- GESTION DE LA MUSIQUE (FICHIER MP3) ---
         let audioCtx = null;
-        let musicInterval = null;
-        let noteIndex = 0;
-
-        const menuMelody = [329.63, 392.00, 523.25, 392.00, 349.23, 440.00, 523.25, 440.00]; 
+        let bgMusic = new Audio('boussole.mp3');
+        bgMusic.loop = true; 
+        bgMusic.volume = 0.25; // Volume de fond modéré
 
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                startMenuMusic();
             }
+            startMenuMusic();
         }
 
         function startMenuMusic() {
-            if (!isMusicEnabled || musicInterval) return;
-            musicInterval = setInterval(() => {
-                if (isPlaying || !audioCtx || !isMusicEnabled) return; 
-                try {
-                    let osc = audioCtx.createOscillator();
-                    let gain = audioCtx.createGain();
-                    osc.type = "triangle"; 
-                    osc.frequency.setValueAtTime(menuMelody[noteIndex], audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime); 
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                    
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.25);
-                    
-                    noteIndex = (noteIndex + 1) % menuMelody.length;
-                } catch(e) {}
-            }, 300);
+            if (!isMusicEnabled || isPlaying) return;
+            bgMusic.play().catch(e => console.log("Attente d'un clic pour lancer le MP3"));
         }
 
         function stopMenuMusic() {
-            if (musicInterval) {
-                clearInterval(musicInterval);
-                musicInterval = null;
-            }
+            bgMusic.pause();
         }
 
         function playSound(type) {
@@ -449,7 +428,6 @@
                 let gain = audioCtx.createGain();
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-
                 let now = audioCtx.currentTime;
 
                 if (type === "pop") {
@@ -524,7 +502,6 @@
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
         
-        // Liens onglet Paramètres
         document.getElementById('settings-btn').addEventListener('click', () => { initAudio(); openSettings(); });
         document.getElementById('settings-back-btn').addEventListener('click', closeSettings);
 
@@ -854,10 +831,8 @@
             }
         }
 
-        // Application initiale de la langue et initialisation de la musique
         applyLanguage();
         if (isMusicEnabled) {
-            // Prêt à démarrer la musique dès la première interaction
             window.addEventListener('click', function musicInitTrigger() {
                 initAudio();
                 window.removeEventListener('click', musicInitTrigger);
