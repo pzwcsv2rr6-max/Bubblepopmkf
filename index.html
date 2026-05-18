@@ -188,8 +188,8 @@
         
         .coins-bank { font-size: 18px; color: #ffd700; font-weight: 600; margin-bottom: 15px; background: rgba(255, 215, 0, 0.1); padding: 6px 20px; border-radius: 20px; border: 1px solid rgba(255, 215, 0, 0.2); }
         
-        /* Menu Boutique Défilant */
-        .shop-container {
+        /* Conteneurs défilants */
+        .shop-container, .settings-container {
             width: 90%;
             max-height: 55vh;
             overflow-y: auto;
@@ -212,16 +212,44 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
-        .skin-option {
+        .skin-option, .setting-row {
             background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 12px;
             text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s ease;
         }
         .skin-option:active { transform: scale(0.95); }
         .skin-option.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.06); box-shadow: inset 0 0 10px rgba(0, 255, 204, 0.1); }
         .preview { width: 40px; height: 40px; border-radius: 50%; }
-        .skin-name { font-size: 13px; font-weight: 600; color: #e0e0e6; }
+        .skin-name, .setting-label { font-size: 13px; font-weight: 600; color: #e0e0e6; }
         .price-tag { font-size: 12px; color: #ffd700; font-weight: 700; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; width: 100%; }
         .skin-option.active .price-tag { color: #00ffcc; }
+
+        /* Styles spécifiques aux paramètres */
+        .setting-row {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            cursor: default;
+        }
+        .toggle-btn, .lang-select {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+        .toggle-btn.active {
+            background: #00ffcc;
+            color: #05050a;
+            border-color: #00ffcc;
+        }
+        .lang-select option {
+            background: #18182c;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -241,10 +269,11 @@
             <div id="menu-highscore">Meilleur Score: 0</div>
             <button class="btn" id="start-btn">Jouer</button>
             <button class="btn btn-secondary" id="skins-btn">Boutique & Upgrades</button>
+            <button class="btn btn-secondary" id="settings-btn">Paramètres</button>
         </div>
 
         <div id="game-over-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
-            <h1 class="glow-title red-title">Game Over</h1>
+            <h1 class="glow-title red-title" id="go-title">Game Over</h1>
             <div id="menu-score" style="margin-bottom: 4px; font-size: 18px; color: #ddd;"></div>
             <div id="menu-coins-earned" style="margin-bottom: 25px; font-size: 18px; color: #ffd700; font-weight: 600;"></div>
             <button class="btn" id="retry-btn">Rejouer</button>
@@ -252,35 +281,98 @@
         </div>
 
         <div id="skins-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
-            <h1 class="glow-title" style="font-size: 28px; margin-bottom: 10px;">Boutique</h1>
-            <div class="coins-bank">Mes Pièces: <span id="bank-count">0</span> 💰</div>
+            <h1 class="glow-title" id="shop-title" style="font-size: 28px; margin-bottom: 10px;">Boutique</h1>
+            <div class="coins-bank"><span id="shop-bank-label">Mes Pièces:</span> <span id="bank-count">0</span> 💰</div>
             
             <div class="shop-container">
-                <div class="shop-section-title">Skins de bulles</div>
+                <div class="shop-section-title" id="shop-section-skins">Skins de bulles</div>
                 <div class="skins-grid">
-                    <div class="skin-option active" data-skin="classic"><div class="preview skin-classic"></div><span class="skin-name">Classique</span><span class="price-tag">Équipé</span></div>
-                    <div class="skin-option" data-skin="neon"><div class="preview skin-neon"></div><span class="skin-name">Néon Lumineux</span><span class="price-tag">50 💰</span></div>
-                    <div class="skin-option" data-skin="star"><div class="preview skin-star"></div><span class="skin-name">Rond Solaire</span><span class="price-tag">150 💰</span></div>
-                    <div class="skin-option" data-skin="donut"><div class="preview skin-donut"></div><span class="skin-name">Rond Plasma</span><span class="price-tag">300 💰</span></div>
-                    <div class="skin-option" data-skin="diamond"><div class="preview skin-diamond"></div><span class="skin-name">Rond Cristal</span><span class="price-tag">500 💰</span></div>
-                    <div class="skin-option" data-skin="fire"><div class="preview skin-fire"></div><span class="skin-name">Rond Infernal</span><span class="price-tag">1000 💰</span></div>
+                    <div class="skin-option active" data-skin="classic"><div class="preview skin-classic"></div><span class="skin-name" id="skin-name-classic">Classique</span><span class="price-tag">Équipé</span></div>
+                    <div class="skin-option" data-skin="neon"><div class="preview skin-neon"></div><span class="skin-name" id="skin-name-neon">Néon Lumineux</span><span class="price-tag">50 💰</span></div>
+                    <div class="skin-option" data-skin="star"><div class="preview skin-star"></div><span class="skin-name" id="skin-name-star">Rond Solaire</span><span class="price-tag">150 💰</span></div>
+                    <div class="skin-option" data-skin="donut"><div class="preview skin-donut"></div><span class="skin-name" id="skin-name-donut">Rond Plasma</span><span class="price-tag">300 💰</span></div>
+                    <div class="skin-option" data-skin="diamond"><div class="preview skin-diamond"></div><span class="skin-name" id="skin-name-diamond">Rond Cristal</span><span class="price-tag">500 💰</span></div>
+                    <div class="skin-option" data-skin="fire"><div class="preview skin-fire"></div><span class="skin-name" id="skin-name-fire">Rond Infernal</span><span class="price-tag">1000 💰</span></div>
                 </div>
                 
-                <div class="shop-section-title">Améliorations (Upgrades)</div>
+                <div class="shop-section-title" id="shop-section-upgrades">Améliorations (Upgrades)</div>
                 <div class="skins-grid">
                     <div class="skin-option" id="upgrade-shield" data-upgrade="shield">
-                        <span style="font-size:24px;">🛡️</span><span class="skin-name">Bouclier (+1 Vie)</span><span class="price-tag" id="shield-status">200 💰</span>
+                        <span style="font-size:24px;">🛡️</span><span class="skin-name" id="upgrade-name-shield">Bouclier (+1 Vie)</span><span class="price-tag" id="shield-status">200 💰</span>
                     </div>
                     <div class="skin-option" id="upgrade-magnet" data-upgrade="magnet">
-                        <span style="font-size:24px;">🧲</span><span class="skin-name">Aimant (Coins x2)</span><span class="price-tag" id="magnet-status">400 💰</span>
+                        <span style="font-size:24px;">🧲</span><span class="skin-name" id="upgrade-name-magnet">Aimant (Coins x2)</span><span class="price-tag" id="magnet-status">400 💰</span>
                     </div>
                 </div>
             </div>
-            <button class="btn btn-secondary" id="back-btn" style="margin-top:10px;">Retour</button>
+            <button class="btn btn-secondary shop-back-btn" id="back-btn" style="margin-top:10px;">Retour</button>
+        </div>
+
+        <div id="settings-menu" class="screen" style="display: none;" onclick="event.stopPropagation()">
+            <h1 class="glow-title" id="settings-title" style="font-size: 28px; margin-bottom: 20px;">Paramètres</h1>
+            
+            <div class="settings-container">
+                <div class="setting-row">
+                    <span class="setting-label" id="setting-label-music">Musique de fond</span>
+                    <button class="toggle-btn active" id="music-toggle-btn">ON</button>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label" id="setting-label-lang">Langue du jeu</span>
+                    <select class="lang-select" id="lang-select">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-secondary settings-back-btn" id="settings-back-btn" style="margin-top:20px;">Retour</button>
         </div>
     </div>
 
     <script>
+        // --- DICTIONNAIRE DE TRADUCTION ---
+        const translations = {
+            fr: {
+                play: "Jouer", shop: "Boutique & Upgrades", settings: "Paramètres", highscore: "Meilleur Score: ",
+                gameover: "Game Over", finalscore: "Score final : ", coinsearned: "Pièces récoltées : +",
+                retry: "Rejouer", home: "Menu Principal", shopTitle: "Boutique", bankLabel: "Mes Pièces:",
+                secSkins: "Skins de bulles", secUpgrades: "Améliorations (Upgrades)", back: "Retour",
+                equipped: "Équipé", unlocked: "Débloqué", alertCoins: "Pas assez de pièces !",
+                hudScore: "Score: ", hudCombo: "Combo: x", hudLives: "Vies: ",
+                skinClassic: "Classique", skinNeon: "Néon Lumineux", skinStar: "Rond Solaire",
+                skinDonut: "Rond Plasma", skinDiamond: "Rond Cristal", skinFire: "Rond Infernal",
+                upShield: "Bouclier (+1 Vie)", upMagnet: "Aimant (Coins x2)", upReady: "Prêt (1 partie)",
+                setMusic: "Musique de fond", setLang: "Langue du jeu"
+            },
+            en: {
+                play: "Play", shop: "Shop & Upgrades", settings: "Settings", highscore: "High Score: ",
+                gameover: "Game Over", finalscore: "Final Score: ", coinsearned: "Coins Collected: +",
+                retry: "Play Again", home: "Main Menu", shopTitle: "Shop", bankLabel: "My Coins:",
+                secSkins: "Bubble Skins", secUpgrades: "Upgrades", back: "Back",
+                equipped: "Equipped", unlocked: "Unlocked", alertCoins: "Not enough coins!",
+                hudScore: "Score: ", hudCombo: "Combo: x", hudLives: "Lives: ",
+                skinClassic: "Classic", skinNeon: "Bright Neon", skinStar: "Solar Orb",
+                skinDonut: "Plasma Orb", skinDiamond: "Crystal Orb", skinFire: "Infernal Orb",
+                upShield: "Shield (+1 Life)", upMagnet: "Magnet (Coins x2)", upReady: "Ready (1 game)",
+                setMusic: "Background Music", setLang: "Game Language"
+            },
+            es: {
+                play: "Jugar", shop: "Tienda y Mejoras", settings: "Ajustes", highscore: "Record: ",
+                gameover: "Fin del Juego", finalscore: "Puntuación final: ", coinsearned: "Monedas ganadas: +",
+                retry: "Rejugar", home: "Menú Principal", shopTitle: "Tienda", bankLabel: "Mis Monedas:",
+                secSkins: "Aspectos de Burbuja", secUpgrades: "Mejoras", back: "Volver",
+                equipped: "Equipado", unlocked: "Desbloqueado", alertCoins: "¡No tienes suficientes monedas!",
+                hudScore: "Puntos: ", hudCombo: "Combo: x", hudLives: "Vidas: ",
+                skinClassic: "Clásico", skinNeon: "Neón Brillante", skinStar: "Orbe Solar",
+                skinDonut: "Orbe de Plasma", skinDiamond: "Orbe de Cristal", skinFire: "Orbe Infernal",
+                upShield: "Escudo (+1 Vida)", upMagnet: "Imán (Monedas x2)", upReady: "Listo (1 partida)",
+                setMusic: "Música de fondo", setLang: "Idioma del juego"
+            }
+        };
+
+        let currentLang = localStorage.getItem('gameLang') || 'fr';
+        let isMusicEnabled = localStorage.getItem('musicEnabled') !== 'false'; // Par défaut true
+
         let score = 0;
         let coins = 0;
         let combo = 0;
@@ -312,7 +404,6 @@
         let musicInterval = null;
         let noteIndex = 0;
 
-        // Mélodie rétro simple en boucle pour les menus (Notes en fréquences Hz)
         const menuMelody = [329.63, 392.00, 523.25, 392.00, 349.23, 440.00, 523.25, 440.00]; 
 
         function initAudio() {
@@ -322,17 +413,16 @@
             }
         }
 
-        // Lance la petite musique rétro de fond
         function startMenuMusic() {
-            if (musicInterval) return;
+            if (!isMusicEnabled || musicInterval) return;
             musicInterval = setInterval(() => {
-                if (isPlaying || !audioCtx) return; // Pas de musique de menu pendant qu'on joue
+                if (isPlaying || !audioCtx || !isMusicEnabled) return; 
                 try {
                     let osc = audioCtx.createOscillator();
                     let gain = audioCtx.createGain();
                     osc.type = "triangle"; 
                     osc.frequency.setValueAtTime(menuMelody[noteIndex], audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime); // Volume doux en fond
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime); 
                     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
                     
                     osc.connect(gain);
@@ -383,14 +473,91 @@
             } catch(e) {}
         }
 
-        // Initialisation de l'audio dès le premier clic utilisateur sur les boutons
+        // --- GESTION DE LA TRADUCTION VISUELLE ---
+        function applyLanguage() {
+            const t = translations[currentLang];
+            
+            // Menu Principal
+            document.getElementById('start-btn').innerText = t.play;
+            document.getElementById('skins-btn').innerText = t.shop;
+            document.getElementById('settings-btn').innerText = t.settings;
+            document.getElementById('menu-highscore').innerText = t.highscore + highScore;
+
+            // Game Over
+            document.getElementById('go-title').innerText = t.gameover;
+            document.getElementById('retry-btn').innerText = t.retry;
+            document.getElementById('home-btn').innerText = t.home;
+
+            // Boutique
+            document.getElementById('shop-title').innerText = t.shopTitle;
+            document.getElementById('shop-bank-label').innerText = t.bankLabel;
+            document.getElementById('shop-section-skins').innerText = t.secSkins;
+            document.getElementById('shop-section-upgrades').innerText = t.secUpgrades;
+            document.getElementById('back-btn').innerText = t.back;
+
+            // Noms des skins
+            document.getElementById('skin-name-classic').innerText = t.skinClassic;
+            document.getElementById('skin-name-neon').innerText = t.skinNeon;
+            document.getElementById('skin-name-star').innerText = t.skinStar;
+            document.getElementById('skin-name-donut').innerText = t.skinDonut;
+            document.getElementById('skin-name-diamond').innerText = t.skinDiamond;
+            document.getElementById('skin-name-fire').innerText = t.skinFire;
+
+            // Upgrades
+            document.getElementById('upgrade-name-shield').innerText = t.upShield;
+            document.getElementById('upgrade-name-magnet').innerText = t.upMagnet;
+
+            // Paramètres
+            document.getElementById('settings-title').innerText = t.settings;
+            document.getElementById('setting-label-music').innerText = t.setMusic;
+            document.getElementById('setting-label-lang').innerText = t.setLang;
+            document.getElementById('settings-back-btn').innerText = t.back;
+
+            updateHUD();
+            updateSkinsUI();
+        }
+
+        // Événements boutons et menus
         document.getElementById('start-btn').addEventListener('click', () => { initAudio(); stopMenuMusic(); startGame(); });
         document.getElementById('retry-btn').addEventListener('click', () => { initAudio(); stopMenuMusic(); startGame(); });
         document.getElementById('skins-btn').addEventListener('click', () => { initAudio(); openSkins(); });
         document.getElementById('back-btn').addEventListener('click', closeSkins);
         document.getElementById('home-btn').addEventListener('click', resetToMainMenu);
         
-        document.getElementById('menu-highscore').innerText = "Meilleur Score: " + highScore;
+        // Liens onglet Paramètres
+        document.getElementById('settings-btn').addEventListener('click', () => { initAudio(); openSettings(); });
+        document.getElementById('settings-back-btn').addEventListener('click', closeSettings);
+
+        // Changement de langue via select
+        const langSelect = document.getElementById('lang-select');
+        langSelect.value = currentLang;
+        langSelect.addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            localStorage.setItem('gameLang', currentLang);
+            applyLanguage();
+        });
+
+        // Activation / Désactivation Musique
+        const musicToggle = document.getElementById('music-toggle-btn');
+        function updateMusicButtonUI() {
+            if (isMusicEnabled) {
+                musicToggle.innerText = "ON";
+                musicToggle.className = "toggle-btn active";
+            } else {
+                musicToggle.innerText = "OFF";
+                musicToggle.className = "toggle-btn";
+            }
+        }
+        musicToggle.addEventListener('click', () => {
+            isMusicEnabled = !isMusicEnabled;
+            localStorage.setItem('musicEnabled', isMusicEnabled);
+            updateMusicButtonUI();
+            if (isMusicEnabled) {
+                startMenuMusic();
+            } else {
+                stopMenuMusic();
+            }
+        });
 
         function triggerMiss() {
             if (!isPlaying) return;
@@ -427,9 +594,7 @@
 
         function gameLoop() {
             if (!isPlaying) return;
-            
             createBubble();
-            
             let currentSpawnDelay = Math.max(380, baseSpawnDelay / Math.sqrt(speedMultiplier));
             gameTimeout = setTimeout(gameLoop, currentSpawnDelay);
         }
@@ -441,8 +606,6 @@
             wrapper.className = 'bubble-wrapper';
 
             const bubble = document.createElement('div');
-            
-            // --- UNIQUEMENT DES BULLES NORMALES MAINTENANT ---
             bubble.className = `bubble skin-${currentSkin}`;
 
             const size = Math.floor(Math.random() * 25) + 60; 
@@ -550,10 +713,11 @@
         }
 
         function updateHUD() {
-            document.getElementById('score-display').innerText = "Score: " + score;
-            document.getElementById('combo-display').innerText = "Combo: x" + combo;
+            const t = translations[currentLang];
+            document.getElementById('score-display').innerText = t.hudScore + score;
+            document.getElementById('combo-display').innerText = t.hudCombo + combo;
             document.getElementById('coins-display').innerText = "💰 " + coins;
-            document.getElementById('lives-display').innerText = "Vies: " + "❤️".repeat(Math.max(0, lives));
+            document.getElementById('lives-display').innerText = t.hudLives + "❤️".repeat(Math.max(0, lives));
         }
 
         function gameOver() {
@@ -567,14 +731,15 @@
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
-                document.getElementById('menu-highscore').innerText = "Meilleur Score: " + highScore;
             }
 
-            document.getElementById('menu-score').innerText = "Score final : " + score;
-            document.getElementById('menu-coins-earned').innerText = "Pièces récoltées : +" + coins + " 💰";
+            const t = translations[currentLang];
+            document.getElementById('menu-highscore').innerText = t.highscore + highScore;
+            document.getElementById('menu-score').innerText = t.finalscore + score;
+            document.getElementById('menu-coins-earned').innerText = t.coinsearned + coins + " 💰";
             
             document.getElementById('game-over-menu').style.display = 'flex';
-            startMenuMusic(); // Relance la musique du menu
+            startMenuMusic(); 
         }
 
         function resetToMainMenu() {
@@ -582,7 +747,7 @@
             document.getElementById('main-menu').style.display = 'flex';
             score = 0; coins = 0; combo = 0; lives = 3; speedMultiplier = 1.0;
             updateHUD();
-            startMenuMusic(); // Relance la musique du menu
+            startMenuMusic(); 
         }
 
         function openSkins() {
@@ -597,10 +762,22 @@
             document.getElementById('main-menu').style.display = 'flex';
         }
 
+        function openSettings() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('settings-menu').style.display = 'flex';
+            updateMusicButtonUI();
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-menu').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        }
+
         document.querySelectorAll('.skin-option').forEach(option => {
             option.addEventListener('click', () => {
                 let id = option.getAttribute('data-skin');
                 let upgrade = option.getAttribute('data-upgrade');
+                const t = translations[currentLang];
                 
                 if (id) {
                     if (unlockedSkins.includes(id)) {
@@ -616,7 +793,7 @@
                             localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
                             localStorage.setItem('currentSkin', currentSkin);
                             document.getElementById('bank-count').innerText = totalCoins;
-                        } else { alert("Pas assez de pièces !"); }
+                        } else { alert(t.alertCoins); }
                     }
                 }
                 
@@ -628,7 +805,7 @@
                             hasShieldBought = true;
                             localStorage.setItem('totalCoins', totalCoins);
                             document.getElementById('bank-count').innerText = totalCoins;
-                        } else { alert("Pas assez de pièces !"); }
+                        } else { alert(t.alertCoins); }
                     }
                     if (upgrade === "magnet") {
                         if (hasMagnetBought) return;
@@ -637,7 +814,7 @@
                             hasMagnetBought = true;
                             localStorage.setItem('totalCoins', totalCoins);
                             document.getElementById('bank-count').innerText = totalCoins;
-                        } else { alert("Pas assez de pièces !"); }
+                        } else { alert(t.alertCoins); }
                     }
                 }
 
@@ -646,14 +823,15 @@
         });
 
         function updateSkinsUI() {
+            const t = translations[currentLang];
             document.querySelectorAll('.skin-option[data-skin]').forEach(option => {
                 let id = option.getAttribute('data-skin');
                 let priceTag = option.querySelector('.price-tag');
                 
                 if (currentSkin === id) {
-                    option.className = "skin-option active"; priceTag.innerText = "Équipé";
+                    option.className = "skin-option active"; priceTag.innerText = t.equipped;
                 } else if (unlockedSkins.includes(id)) {
-                    option.className = "skin-option"; priceTag.innerText = "Débloqué";
+                    option.className = "skin-option"; priceTag.innerText = t.unlocked;
                 } else {
                     option.className = "skin-option"; priceTag.innerText = skinPrices[id] + " 💰";
                 }
@@ -662,7 +840,7 @@
             let shieldTag = document.getElementById('shield-status');
             let shieldBtn = document.getElementById('upgrade-shield');
             if (hasShieldBought) {
-                shieldBtn.className = "skin-option active"; shieldTag.innerText = "Prêt (1 partie)";
+                shieldBtn.className = "skin-option active"; shieldTag.innerText = t.upReady;
             } else {
                 shieldBtn.className = "skin-option"; shieldTag.innerText = "200 💰";
             }
@@ -670,10 +848,20 @@
             let magnetTag = document.getElementById('magnet-status');
             let magnetBtn = document.getElementById('upgrade-magnet');
             if (hasMagnetBought) {
-                magnetBtn.className = "skin-option active"; magnetTag.innerText = "Prêt (1 partie)";
+                magnetBtn.className = "skin-option active"; magnetTag.innerText = t.upReady;
             } else {
                 magnetBtn.className = "skin-option"; magnetTag.innerText = "400 💰";
             }
+        }
+
+        // Application initiale de la langue et initialisation de la musique
+        applyLanguage();
+        if (isMusicEnabled) {
+            // Prêt à démarrer la musique dès la première interaction
+            window.addEventListener('click', function musicInitTrigger() {
+                initAudio();
+                window.removeEventListener('click', musicInitTrigger);
+            });
         }
     </script>
 </body>
