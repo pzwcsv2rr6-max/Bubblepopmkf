@@ -71,7 +71,22 @@
             text-align: center;
         }
         #coins-display { color: #ffd700; border-color: rgba(255, 215, 0, 0.2); }
-        #combo-display { color: #ff3377; border-color: rgba(255, 51, 119, 0.2); font-weight: 800; transform: scale(1); transition: transform 0.1s ease; }
+        
+        /* Style de base du combo */
+        #combo-display { 
+            color: #ff3377; 
+            border-color: rgba(255, 51, 119, 0.2); 
+            font-weight: 800; 
+            transform: scale(1); 
+            transition: all 0.1s ease; 
+        }
+        /* Effet visuel quand le combo est élevé (>= 5) */
+        #combo-display.high-combo-active {
+            color: #ffd700;
+            border-color: #ffd700;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
+        }
         
         /* Zone de clic élargie */
         .bubble-wrapper {
@@ -168,14 +183,25 @@
             margin-bottom: 5px;
             text-align: center;
         }
-        #menu-highscore {
+        
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 30px;
+        }
+        .menu-stat {
             color: #00ffcc;
             font-weight: 700;
             font-size: 14px;
             letter-spacing: 1px;
-            margin-bottom: 30px;
             text-transform: uppercase;
         }
+        #menu-highcombo {
+            color: #ff3377;
+        }
+        
         .red-title { background: linear-gradient(45deg, #ff3333, #ff007b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 10px rgba(255,51,51,0.3)); }
 
         .btn {
@@ -266,7 +292,10 @@
         
         <div id="main-menu" class="screen" onclick="event.stopPropagation()">
             <h1 class="glow-title">Bubble Pop</h1>
-            <div id="menu-highscore">Meilleur Score: 0</div>
+            <div class="stats-container">
+                <div id="menu-highscore" class="menu-stat">Meilleur Score: 0</div>
+                <div id="menu-highcombo" class="menu-stat">Meilleur Combo: x0</div>
+            </div>
             <button class="btn" id="start-btn">Jouer</button>
             <button class="btn btn-secondary" id="skins-btn">Boutique & Upgrades</button>
             <button class="btn btn-secondary" id="settings-btn">Paramètres</button>
@@ -333,7 +362,8 @@
         // --- DICTIONNAIRE DE TRADUCTION ---
         const translations = {
             fr: {
-                play: "Jouer", shop: "Boutique & Upgrades", settings: "Paramètres", highscore: "Meilleur Score: ",
+                play: "Jouer", shop: "Boutique & Upgrades", settings: "Paramètres", 
+                highscore: "Meilleur Score: ", highcombo: "Meilleur Combo: x",
                 gameover: "Game Over", finalscore: "Score final : ", coinsearned: "Pièces récoltées : +",
                 retry: "Rejouer", home: "Menu Principal", shopTitle: "Boutique", bankLabel: "Mes Pièces:",
                 secSkins: "Skins de bulles", secUpgrades: "Améliorations (Upgrades)", back: "Retour",
@@ -345,7 +375,8 @@
                 setMusic: "Musique de fond", setLang: "Langue du jeu"
             },
             en: {
-                play: "Play", shop: "Shop & Upgrades", settings: "Settings", highscore: "High Score: ",
+                play: "Play", shop: "Shop & Upgrades", settings: "Settings", 
+                highscore: "High Score: ", highcombo: "Max Combo: x",
                 gameover: "Game Over", finalscore: "Final Score: ", coinsearned: "Coins Collected: +",
                 retry: "Play Again", home: "Main Menu", shopTitle: "Shop", bankLabel: "My Coins:",
                 secSkins: "Bubble Skins", secUpgrades: "Upgrades", back: "Back",
@@ -357,9 +388,10 @@
                 setMusic: "Background Music", setLang: "Game Language"
             },
             es: {
-                play: "Jugar", shop: "Tienda y Mejoras", settings: "Ajustes", highscore: "Record: ",
+                play: "Jugar", shop: "Tienda y Mejoras", settings: "Ajustes", 
+                highscore: "Record: ", highcombo: "Mejor Combo: x",
                 gameover: "Fin del Juego", finalscore: "Puntuación final: ", coinsearned: "Monedas ganadas: +",
-                retry: "Rejugar", home: "Menu Principal", shopTitle: "Tienda", bankLabel: "Mis Monedas:",
+                retry: "Rejugar", home: "Menú Principal", shopTitle: "Tienda", bankLabel: "Mis Monedas:",
                 secSkins: "Aspectos de Burbuja", secUpgrades: "Mejoras", back: "Volver",
                 equipped: "Equipado", unlocked: "Desbloqueado", alertCoins: "¡No tienes suficientes monedas!",
                 hudScore: "Puntos: ", hudCombo: "Combo: x", hudLives: "Vidas: ",
@@ -376,9 +408,12 @@
         let score = 0;
         let coins = 0;
         let combo = 0;
+        let sessionMaxCombo = 0; // Sauvegarde le plus grand combo de la partie en cours
         
         let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
         let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        let highCombo = parseInt(localStorage.getItem('highCombo')) || 0; // Nouveau LocalStorage
+        
         let currentSkin = localStorage.getItem('currentSkin') || 'classic';
         let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['classic'];
         
@@ -399,12 +434,11 @@
 
         const skinPrices = { neon: 50, star: 150, donut: 300, diamond: 500, fire: 1000 };
 
-        // --- NOUVEAU MOTEUR AUDIO : MÉLODIE DOUCE ET RELAXANTE ---
+        // --- MOTEUR AUDIO : MÉLODIE DOUCE ---
         let audioCtx = null;
         let musicInterval = null;
         let noteIndex = 0;
 
-        // Une mélodie en arpèges très doux (Gamme de Do Majeur / Lam)
         const softMelody = [
             261.63, 329.63, 392.00, 523.25, 392.00, 329.63,
             293.66, 349.23, 440.00, 587.33, 440.00, 349.23,
@@ -421,17 +455,15 @@
 
         function startMenuMusic() {
             if (!isMusicEnabled || musicInterval) return;
-            // Un tempo lent et apaisant (toutes les 450ms)
             musicInterval = setInterval(() => {
                 if (isPlaying || !audioCtx || !isMusicEnabled) return; 
                 try {
                     let osc = audioCtx.createOscillator();
                     let gain = audioCtx.createGain();
                     
-                    osc.type = "sine"; // Onde sinusoïdale pure pour un son de clochette très doux
+                    osc.type = "sine"; 
                     osc.frequency.setValueAtTime(softMelody[noteIndex], audioCtx.currentTime);
                     
-                    // Volume très bas et progressif pour ne pas agresser
                     gain.gain.setValueAtTime(0.06, audioCtx.currentTime); 
                     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
                     
@@ -463,7 +495,6 @@
                 let now = audioCtx.currentTime;
 
                 if (type === "pop") {
-                    // Son de pop cristallin
                     osc.type = "sine";
                     let pitch = 500 + Math.min(500, combo * 20); 
                     osc.frequency.setValueAtTime(pitch, now);
@@ -474,7 +505,6 @@
                     osc.stop(now + 0.08);
                 } 
                 else if (type === "error") {
-                    // Alerte douce descendante
                     osc.type = "triangle";
                     osc.frequency.setValueAtTime(160, now);
                     osc.frequency.linearRampToValueAtTime(90, now + 0.25);
@@ -494,6 +524,7 @@
             document.getElementById('skins-btn').innerText = t.shop;
             document.getElementById('settings-btn').innerText = t.settings;
             document.getElementById('menu-highscore').innerText = t.highscore + highScore;
+            document.getElementById('menu-highcombo').innerText = t.highcombo + highCombo;
 
             document.getElementById('go-title').innerText = t.gameover;
             document.getElementById('retry-btn').innerText = t.retry;
@@ -578,6 +609,7 @@
             score = 0;
             coins = 0;
             combo = 0;
+            sessionMaxCombo = 0;
             speedMultiplier = 1.0;
             isPlaying = true;
             
@@ -634,8 +666,14 @@
                 createExplosion(parseFloat(wrapper.style.left) + (size/2) + 20, window.innerHeight - (wrapper.getBoundingClientRect().bottom - (size/2)));
 
                 combo++;
+                
+                // Track le combo maximum atteint durant cette partie
+                if (combo > sessionMaxCombo) {
+                    sessionMaxCombo = combo;
+                }
+
                 let cmbDisplay = document.getElementById('combo-display');
-                cmbDisplay.style.transform = "scale(1.2)";
+                cmbDisplay.style.transform = "scale(1.25)";
                 setTimeout(() => cmbDisplay.style.transform = "scale(1)", 100);
 
                 playSound("pop"); 
@@ -719,7 +757,18 @@
         function updateHUD() {
             const t = translations[currentLang];
             document.getElementById('score-display').innerText = t.hudScore + score;
-            document.getElementById('combo-display').innerText = t.hudCombo + combo;
+            
+            // Gestion de l'affichage textuel du combo
+            let cmbDisplay = document.getElementById('combo-display');
+            cmbDisplay.innerText = t.hudCombo + combo;
+            
+            // EFFET VISUEL (Proposition 3) : Ajout d'une classe spéciale si le combo >= 5
+            if (combo >= 5) {
+                cmbDisplay.classList.add('high-combo-active');
+            } else {
+                cmbDisplay.classList.remove('high-combo-active');
+            }
+            
             document.getElementById('coins-display').innerText = "💰 " + coins;
             document.getElementById('lives-display').innerText = t.hudLives + "❤️".repeat(Math.max(0, lives));
         }
@@ -732,13 +781,22 @@
             totalCoins += coins;
             localStorage.setItem('totalCoins', totalCoins);
 
+            // Enregistrement du meilleur score
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
             }
 
+            // ENREGISTREMENT DU MEILLEUR COMBO HISTORIQUE (Proposition 1)
+            if (sessionMaxCombo > highCombo) {
+                highCombo = sessionMaxCombo;
+                localStorage.setItem('highCombo', highCombo);
+            }
+
             const t = translations[currentLang];
             document.getElementById('menu-highscore').innerText = t.highscore + highScore;
+            document.getElementById('menu-highcombo').innerText = t.highcombo + highCombo;
+            
             document.getElementById('menu-score').innerText = t.finalscore + score;
             document.getElementById('menu-coins-earned').innerText = t.coinsearned + coins + " 💰";
             
@@ -749,7 +807,7 @@
         function resetToMainMenu() {
             document.getElementById('game-over-menu').style.display = 'none';
             document.getElementById('main-menu').style.display = 'flex';
-            score = 0; coins = 0; combo = 0; lives = 3; speedMultiplier = 1.0;
+            score = 0; coins = 0; combo = 0; sessionMaxCombo = 0; lives = 3; speedMultiplier = 1.0;
             updateHUD();
             startMenuMusic(); 
         }
